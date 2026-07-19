@@ -5,11 +5,11 @@ IFS=$'\n\t'
 umask 077
 export LC_ALL=C
 
-readonly VERSION='0.1.3'
-readonly RELEASE_TAG='v0.1.3'
-readonly WHEEL_FILENAME='castles-0.1.3-py3-none-any.whl'
-readonly WHEEL_URL='https://github.com/luigiverona/castles/releases/download/v0.1.3/castles-0.1.3-py3-none-any.whl'
-readonly WHEEL_SHA256='8f0341d30b0c9347f043a4348459c1a1715c941e563e6cc1cc1d1cce561a0345'
+readonly VERSION='0.1.4'
+readonly RELEASE_TAG='v0.1.4'
+readonly WHEEL_FILENAME='castles-0.1.4-py3-none-any.whl'
+readonly WHEEL_URL='https://github.com/luigiverona/castles/releases/download/v0.1.4/castles-0.1.4-py3-none-any.whl'
+readonly WHEEL_SHA256='117de05b13fe6bbb7fb75d0f9a00d09c0ee1cb46797ec8ce92dbe1c8061184dc'
 
 TEMP_DIR=''
 
