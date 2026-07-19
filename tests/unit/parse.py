@@ -204,6 +204,24 @@ def test_mime_translates_html_library_failure_without_content(
     assert private not in str(caught.value)
 
 
+@pytest.mark.parametrize(
+    "failure", [TypeError("private"), ValueError("private"), RecursionError("private")]
+)
+def test_html_boundary_translates_known_data_shape_failures(
+    monkeypatch: pytest.MonkeyPatch,
+    failure: Exception,
+) -> None:
+    def broken(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise failure
+
+    monkeypatch.setattr(html_parser, "BeautifulSoup", broken)
+    with pytest.raises(ParsingError) as caught:
+        extract("<p>synthetic private content</p>")
+    assert str(caught.value) == "message HTML content could not be parsed safely"
+    assert "private" not in str(caught.value)
+
+
 def test_html_boundary_does_not_hide_programming_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
