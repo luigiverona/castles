@@ -13,11 +13,11 @@ import pytest
 
 ROOT = Path(__file__).parents[1]
 INSTALLER = ROOT / "site" / "install"
-VERSION = "0.1.3"
-TAG = "v0.1.3"
-ASSET = "castles-0.1.3-py3-none-any.whl"
+VERSION = "0.1.4"
+TAG = "v0.1.4"
+ASSET = "castles-0.1.4-py3-none-any.whl"
 URL = f"https://github.com/luigiverona/castles/releases/download/{TAG}/{ASSET}"
-DIGEST = "8f0341d30b0c9347f043a4348459c1a1715c941e563e6cc1cc1d1cce561a0345"
+DIGEST = "117de05b13fe6bbb7fb75d0f9a00d09c0ee1cb46797ec8ce92dbe1c8061184dc"
 QUICK_COMMAND = "curl -fsSL https://castles.luigiverona.dev/install | bash"
 PAYLOAD = b"controlled offline wheel fixture\n"
 
@@ -111,7 +111,7 @@ if [ "$1" = tool ] && [ "$2" = install ]; then
     exit 1
   fi
   /bin/mkdir -p "$UV_TOOL_DIR/castles" "$UV_TOOL_BIN_DIR"
-  printf '%s\n' '#!/bin/sh' "printf 'Castles %s\\n' '${FAKE_UV_RESULT_VERSION:-0.1.3}'" > "$UV_TOOL_BIN_DIR/castles"
+  printf '%s\n' '#!/bin/sh' "printf 'Castles %s\\n' '${FAKE_UV_RESULT_VERSION:-0.1.4}'" > "$UV_TOOL_BIN_DIR/castles"
   /bin/chmod 755 "$UV_TOOL_BIN_DIR/castles"
   exit 0
 fi
@@ -343,7 +343,7 @@ def test_success_uses_verified_local_wheel_exact_python_and_isolated_uv(
     assert "--force" not in call
     assert "--no-python-downloads" in call
     assert f"--python {Path(sys.executable).resolve()}" in call
-    match = re.search(r"(/[^ ]+/castles-install\.[^ ]+/castles-0\.1\.3-py3-none-any\.whl)", call)
+    match = re.search(r"(/[^ ]+/castles-install\.[^ ]+/castles-0\.1\.4-py3-none-any\.whl)", call)
     assert match is not None
     assert not Path(match.group(1)).exists()
     assert (sandbox.tool_bin / "castles").read_text().startswith("#!/bin/sh")
