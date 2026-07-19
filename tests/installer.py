@@ -350,7 +350,8 @@ def test_success_uses_verified_local_wheel_exact_python_and_isolated_uv(
     assert list(sandbox.temporary.iterdir()) == []
     assert "Checksum verified." in result.stdout
     assert "castles --version" in result.stdout
-    assert "castles setup /path/to/google-desktop-client.json" in result.stdout
+    assert "  castles setup\n" in result.stdout
+    assert "castles setup /path/" not in result.stdout
     assert "castles scan" in result.stdout
     assert "castles results" in result.stdout
     assert not (sandbox.root / "home").exists()

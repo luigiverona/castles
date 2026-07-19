@@ -215,6 +215,6 @@ if [ "$(command -v castles 2>/dev/null || true)" != "$uv_executable" ]; then
 fi
 say 'Next steps:'
 say '  castles --version'
-say '  castles setup /path/to/google-desktop-client.json'
+say '  castles setup'
 say '  castles scan'
 say '  castles results'
