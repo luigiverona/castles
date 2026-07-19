@@ -4,10 +4,12 @@ from datetime import UTC, datetime
 from email.message import EmailMessage
 
 import pytest
+from bs4 import Tag
 
 from castles.core.error import ParsingError
 from castles.core.message import MessageRef, RawMessage
-from castles.parse.html import extract
+from castles.parse import html as html_parser
+from castles.parse.html import MAX_HTML_LINKS, extract
 from castles.parse.mime import MAX_RAW_BYTES, parse
 from castles.parse.url import MAX_URLS, hostname, hostnames
 
@@ -62,6 +64,148 @@ def test_html_standalone() -> None:
     )
     assert text == "yes mail"
     assert links == ()
+
+
+def test_html_nested_hidden_style_does_not_invalidate_descendant() -> None:
+    text, links = extract(
+        '<div style="display:none">'
+        '<span style="color:red">secret</span>'
+        '<a href="https://hidden.example/private">hidden link</a>'
+        "</div><p>visible</p>"
+    )
+    assert text == "visible"
+    assert links == ()
+
+
+@pytest.mark.parametrize(
+    "hidden",
+    [
+        '<div style="display:none"><span style="display:none">secret</span></div>',
+        '<div style="visibility:hidden"><span style="color:red">secret</span></div>',
+        "<div hidden><span hidden>secret</span></div>",
+        '<div aria-hidden="true"><span aria-hidden="true">secret</span></div>',
+        '<template><svg><span style="color:red">secret</span></svg></template>',
+        '<svg><a href="https://hidden.example/private">secret</a><canvas>x</canvas></svg>',
+    ],
+)
+def test_html_nested_removals_preserve_only_visible_tree(hidden: str) -> None:
+    text, links = extract(
+        hidden + '<p>visible</p><a href="https://visible.example/path">visible link</a>'
+    )
+    assert text == "visible visible link"
+    assert links == ("https://visible.example/path",)
+
+
+def test_html_destructive_snapshots_are_processed_descendant_first(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    order: list[str] = []
+    original = Tag.decompose
+
+    def tracked(element: Tag) -> None:
+        if isinstance(element.attrs, dict) and "data-order" in element.attrs:
+            order.append(str(element.attrs["data-order"]))
+        original(element)
+
+    monkeypatch.setattr(Tag, "decompose", tracked)
+    text, links = extract(
+        '<div hidden data-order="parent">'
+        '<span hidden data-order="child">secret</span>'
+        "</div><p>visible</p>"
+    )
+    assert order == ["child", "parent"]
+    assert text == "visible"
+    assert links == ()
+
+
+def test_html_malformed_anchors_and_mixed_visibility() -> None:
+    text, links = extract(
+        '<div hidden><a href="https://hidden.example/private">hidden</a></div>'
+        '<a href="https://first.example/path"><span>first</span>'
+        '<a href="https://second.example/path">second</a></a>'
+        '<a href=>broken</a><a href="mailto:private@example.com">mail</a>'
+    )
+    assert "hidden" not in text
+    assert "first" in text and "second" in text and "broken" in text and "mail" in text
+    assert links == ("https://first.example/path", "https://second.example/path")
+
+
+def test_html_link_cap_remains_exact() -> None:
+    value = "".join(
+        f'<a href="https://visible{index}.example/path">link</a>'
+        for index in range(MAX_HTML_LINKS + 1)
+    )
+    _, links = extract(value)
+    assert len(links) == MAX_HTML_LINKS
+    assert links[0] == "https://visible0.example/path"
+    assert links[-1] == f"https://visible{MAX_HTML_LINKS - 1}.example/path"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("", ""),
+        ("<!-- fragment only -->", ""),
+        ("</div><span>fragment</span>", "fragment"),
+        ("<>broken fragment", "<>broken fragment"),
+    ],
+)
+def test_html_empty_and_fragment_inputs(value: str, expected: str) -> None:
+    text, links = extract(value)
+    assert text == expected
+    assert links == ()
+
+
+def test_html_deeply_nested_bounded_fragment() -> None:
+    value = "<div>" * 100 + '<a href="https://visible.example/path">visible</a>' + "</div>" * 100
+    assert extract(value) == ("visible", ("https://visible.example/path",))
+
+
+def test_mime_nested_hidden_html_is_sanitized() -> None:
+    message = EmailMessage()
+    message["From"] = "sender@example.com"
+    message.set_content("plain")
+    message.add_alternative(
+        '<div style="display:none"><span style="color:red">secret</span>'
+        '<a href="https://hidden.example/private">hidden</a></div>'
+        '<p>visible</p><a href="https://visible.example/path">visible link</a>',
+        subtype="html",
+    )
+    result = parse(raw(message.as_bytes()))
+    assert "secret" not in result.text and "hidden" not in result.text
+    assert "visible" in result.text
+    assert result.links == ("visible.example",)
+
+
+def test_mime_translates_html_library_failure_without_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private = "synthetic-private-html-content"
+
+    def broken(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise AttributeError(private)
+
+    monkeypatch.setattr(html_parser, "BeautifulSoup", broken)
+    message = EmailMessage()
+    message["From"] = "sender@example.com"
+    message.add_alternative(f"<p>{private}</p>", subtype="html")
+    with pytest.raises(ParsingError) as caught:
+        parse(raw(message.as_bytes()))
+    assert str(caught.value) == "message HTML content could not be parsed safely"
+    assert private not in str(caught.value)
+
+
+def test_html_boundary_does_not_hide_programming_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def broken(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise RuntimeError("synthetic programming failure")
+
+    monkeypatch.setattr(html_parser, "BeautifulSoup", broken)
+    with pytest.raises(RuntimeError, match="programming"):
+        extract("<p>synthetic</p>")
 
 
 @pytest.mark.parametrize(

@@ -186,6 +186,22 @@ def test_scan_output_and_since_validation(monkeypatch: pytest.MonkeyPatch) -> No
     assert "timezone" in invalid.stderr
 
 
+def test_partial_scan_output_contains_only_aggregate_counts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_content = "synthetic-private-message-content"
+    private_key = "synthetic-private-message-key"
+    value = ScanResult("scan", ScanMode.INITIAL, ScanStatus.PARTIAL, NOW, NOW, 3, 2, 1, 2)
+    monkeypatch.setattr(wiring, "scan", lambda request: value)
+    result = runner.invoke(app, ["scan"])
+    assert result.exit_code == 0
+    assert (
+        "Partial initial scan: 3 discovered, 2 processed, 1 skipped, 2 findings." in result.stdout
+    )
+    assert private_content not in result.output
+    assert private_key not in result.output
+
+
 def test_results_show_and_narrow_terminal(isolated: Paths, monkeypatch: pytest.MonkeyPatch) -> None:
     seed(isolated)
     monkeypatch.setenv("COLUMNS", "40")
