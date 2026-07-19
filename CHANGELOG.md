@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.1.3 - 2026-07-19
+
+- Add guided `castles setup` with deterministic explicit/managed/interactive Downloads client
+  resolution and actionable non-interactive behavior.
+- Validate and normalize user-owned Google Desktop clients into an atomic private managed copy
+  without deleting or persisting the source path.
+- Preserve v0.1.2 tokens and OAuth hardening while adding typed privacy-safe setup failures and
+  exact post-exchange scope and credential validation before token replacement.
+- Publish a complete static Google OAuth setup guide, update site navigation and privacy language,
+  and remove the cancelled shared-client verification initiative.
+- Expand setup, client, prompt, authorization, packaging, website, security, and compatibility
+  tests using synthetic values and mocked boundaries only.
 - Add a checksum-verified, version-pinned quick installer and publish its inspectable command on the
   website without changing runtime, OAuth behavior, or the 0.1.2 package version.
 - Harden repository documentation, package metadata, contribution guidance, CI safeguards, and

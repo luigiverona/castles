@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create a personal Google Desktop OAuth client and authorize Castles for read-only Gmail access.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <link rel="canonical" href="https://castles.luigiverona.dev/setup.html">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>Google OAuth setup — Castles</title>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="index.html" aria-label="Castles home">
+        <img src="logo.svg" width="224" height="56" alt="Castles">
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a aria-current="page" href="setup.html">Setup</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="support.html">Support</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="policy">
+    <article class="wrap prose">
+      <p class="eyebrow">Personal Google authorization</p>
+      <h1>Set up Castles for Gmail</h1>
+      <p class="lede">Create one Google Desktop OAuth client in a project you control, then let Castles keep a private managed copy and open Google’s authorization page. No Google password or mailbox data passes through Castles infrastructure.</p>
+
+      <nav class="contents" aria-label="Setup guide contents">
+        <h2>Guide contents</h2>
+        <ol>
+          <li><a href="#what-you-create">What you are creating</a></li>
+          <li><a href="#before-starting">Before starting</a></li>
+          <li><a href="#project">Create a dedicated project</a></li>
+          <li><a href="#gmail-api">Enable the Gmail API</a></li>
+          <li><a href="#oauth-application">Configure the OAuth application</a></li>
+          <li><a href="#data-access">Add data access</a></li>
+          <li><a href="#testing-or-in-production">Choose Testing or In production</a></li>
+          <li><a href="#desktop-client">Create a Desktop app client</a></li>
+          <li><a href="#run-setup">Run Castles setup</a></li>
+          <li><a href="#warning-screens">Google warning screens</a></li>
+          <li><a href="#after-setup">After setup</a></li>
+          <li><a href="#revocation">Revocation and deletion</a></li>
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="what-you-create">1. What you are creating</h2>
+      <p>The OAuth client identifies your own Google Cloud project when the local Castles process asks Google for authorization. It does not give the Castles maintainer access to your project, account, or mail. Castles uses the client only for direct local authorization with Google; there is no Castles backend.</p>
+      <p>A desktop application cannot keep a client secret confidential from someone who controls the installed application. Even so, treat the downloaded client JSON as sensitive configuration: keep it private and never post it in source control, issues, screenshots, email, or chat.</p>
+
+      <h2 id="before-starting">2. Before starting</h2>
+      <p>You need:</p>
+      <ul>
+        <li>a Google account;</li>
+        <li>Castles installed;</li>
+        <li>access to the Google Cloud Console;</li>
+        <li>a browser; and</li>
+        <li>a private local place for the downloaded JSON.</li>
+      </ul>
+
+      <h2 id="project">3. Create a dedicated project</h2>
+      <ol>
+        <li>Open Google Cloud Console and create a project, or select a dedicated project you already control.</li>
+        <li>Use a clear personal name such as <strong>Castles Personal</strong>. The exact name does not matter.</li>
+      </ol>
+      <p>A dedicated project keeps Castles’ API, consent, client, and grant settings separate from unrelated applications and credentials. Do not mix unrelated APIs or credentials into this project.</p>
+      <p>See Google’s official <a href="https://docs.cloud.google.com/resource-manager/docs/creating-managing-projects">project creation documentation</a>.</p>
+
+      <h2 id="gmail-api">4. Enable the Gmail API</h2>
+      <ol>
+        <li>With the dedicated project selected, open the <a href="https://console.cloud.google.com/apis/library">Google API Library</a>.</li>
+        <li>Search for <strong>Gmail API</strong>, open it, and choose <strong>Enable</strong>.</li>
+      </ol>
+      <p>Google documents the current API Library process in its official <a href="https://support.google.com/cloud/answer/13461325">OAuth configuration guidance</a>.</p>
+
+      <h2 id="oauth-application">5. Configure the OAuth application</h2>
+      <p>Open <strong>Google Auth Platform</strong> for the selected project and choose <strong>Get started</strong> if the application has not been configured. Google currently organizes these settings under <strong>Branding</strong>, <strong>Audience</strong>, <strong>Clients</strong>, and <strong>Data Access</strong>.</p>
+      <ul>
+        <li>For a personal Google account, choose an <strong>External</strong> audience.</li>
+        <li><strong>Internal</strong> is available only for an appropriate Google Workspace organization and restricts access to that organization.</li>
+        <li>Use an app name you control, such as <strong>Castles Personal</strong>.</li>
+        <li>Choose a user support address you monitor and developer contact addresses you control.</li>
+        <li>Do not impersonate the public Castles project and do not claim Google verification or endorsement.</li>
+      </ul>
+      <p>A personal desktop client does not need Castles’ public logo, website, privacy page, or domain merely to follow this guide unless Google’s current console specifically requires a field for your configuration. Review Google’s official <a href="https://support.google.com/cloud/answer/15544987">Google Auth Platform setup documentation</a> if the interface changes.</p>
+
+      <h2 id="data-access">6. Add data access</h2>
+      <p>On <strong>Data Access</strong>, add exactly this scope:</p>
+      <pre><code>https://www.googleapis.com/auth/gmail.readonly</code></pre>
+      <p>Castles must read message content to discover relationship evidence in visible wording, headers, and link hostnames. Metadata-only access is insufficient for this function.</p>
+      <p>Read-only access does not allow Castles to send, modify, delete, label, move, draft, or compose mail.</p>
+      <p>Do not manually add <code>openid</code>, <code>email</code>, <code>profile</code>, <code>gmail.metadata</code>, <code>gmail.modify</code>, <code>mail.google.com</code>, or any other scope. If Google displays basic identity permissions that it manages automatically, distinguish those interface defaults from the one Gmail scope Castles explicitly requests; do not expand access manually.</p>
+      <p>See Google’s official <a href="https://support.google.com/cloud/answer/15549135">Data Access documentation</a>.</p>
+
+      <h2 id="testing-or-in-production">7. Choose Testing or In production</h2>
+      <h3>Testing</h3>
+      <p>Testing is appropriate for initial setup and experimentation. Only accounts explicitly listed as test users can authorize. Add the Google account you will use with Castles to the test-user list.</p>
+      <p>For an application requesting this Gmail scope, a Testing authorization currently expires seven days after consent; an offline refresh token also expires. You may need to run setup again.</p>
+
+      <h3>In production for a personal client</h3>
+      <p>Moving an External project to <strong>In production</strong> removes the Testing test-user allowlist behavior and Testing’s seven-day authorization expiration. It does not mean Google has verified, approved, or endorsed the application. An unverified-app warning may appear, and Google’s unverified-app user cap and other current requirements still apply.</p>
+      <p>Use an unverified In production client only for yourself or a small number of people who personally trust and can verify the project owner. Public distribution has separate verification, quota, policy, and possibly security-assessment requirements. This guide does not recommend publishing an unverified client to unknown users.</p>
+
+      <aside class="notice" aria-label="Personal-use recommendation">
+        <strong>Personal-use recommendation:</strong> For a client used only by you, start in Testing to confirm setup. After it works, review Google’s current requirements and consider moving your personal project to In production to avoid Testing’s short-lived authorization. The application remains unverified.
+      </aside>
+      <p>Before changing status, review Google’s official <a href="https://support.google.com/cloud/answer/15549945">Audience and publishing-status documentation</a> and <a href="https://support.google.com/cloud/answer/7454865">unverified-app guidance</a>.</p>
+
+      <h2 id="desktop-client">8. Create a Desktop app client</h2>
+      <ol>
+        <li>Open <strong>Google Auth Platform → Clients</strong>.</li>
+        <li>Choose <strong>Create client</strong>.</li>
+        <li>Set application type to <strong>Desktop app</strong>.</li>
+        <li>Use a clear personal name and create the client.</li>
+        <li>Download the JSON immediately and keep it private.</li>
+      </ol>
+      <p>Do not use a Web application client, service account, or API key. Google’s desktop client uses a local loopback redirect; Castles binds only to <code>127.0.0.1</code> on a temporary port.</p>
+      <p>See Google’s official <a href="https://support.google.com/cloud/answer/15549257">OAuth Clients documentation</a> and <a href="https://developers.google.com/identity/protocols/oauth2/native-app">desktop authorization documentation</a>.</p>
+
+      <h2 id="run-setup">9. Run Castles setup</h2>
+      <p>Run the normal guided command:</p>
+      <pre><code>castles setup</code></pre>
+      <p>Castles reuses a valid managed client when one exists. Otherwise, in an interactive terminal it checks only immediate files in your Downloads directory, validates conventional Google client JSON candidates, and asks before using one. Multiple valid files always require an explicit choice. If none is found, Castles asks for the downloaded file’s path.</p>
+      <p>Advanced users can supply the path directly; this bypasses discovery and prompts:</p>
+      <pre><code>castles setup /private/path/to/google-desktop-client.json</code></pre>
+      <p>After validation, Castles writes a normalized private managed copy in its platform-native configuration directory. On POSIX systems the directory is mode <code>0700</code> and the file is mode <code>0600</code>. The source is not deleted and its path is not stored.</p>
+      <p>Only if the browser cannot be opened, retry with:</p>
+      <pre><code>castles setup --no-browser</code></pre>
+      <p>This prints a sensitive, one-attempt authorization URL. Open only the newest URL and never share it or put it in an issue, screenshot, shell transcript, or chat.</p>
+
+      <h2 id="warning-screens">10. Google warning screens</h2>
+      <p>A personal unverified client may display an unverified-app warning. Continue only when the Google Cloud project and OAuth client are yours or are controlled by someone you personally trust. Verify the project identity shown by Google before granting access.</p>
+      <p>Do not use warning-screen instructions to persuade unknown users to trust a project. Public Castles does not ask users to trust a shared unverified client; each user supplies and owns their client.</p>
+
+      <h2 id="after-setup">11. After setup</h2>
+      <p>Successful setup saves authorization but does not scan Gmail. Start analysis explicitly:</p>
+      <pre><code>castles scan
+castles results</code></pre>
+
+      <h2 id="revocation">12. Revocation and deletion</h2>
+      <ul>
+        <li><code>castles logout</code> removes the local authorization token only. It does not revoke the Google grant, delete findings, or delete the managed client.</li>
+        <li>Remove the project’s access on the <a href="https://myaccount.google.com/connections">Google Account third-party connections page</a> to revoke the Google grant.</li>
+        <li>Delete local findings or all Castles configuration/state using the platform-specific instructions in the <a href="privacy.html#retention">privacy policy</a>.</li>
+        <li>The original downloaded JSON and Castles’ managed client are separate. Castles never deletes the source. The managed client remains until you manually remove the Castles configuration directory; there is currently no command that removes it.</li>
+      </ul>
+
+      <h2 id="troubleshooting">13. Troubleshooting</h2>
+      <h3>The project is in Testing</h3>
+      <p>Confirm the authorizing account is listed under Audience → Test users. Testing authorization for this Gmail scope expires after seven days, so reauthorization is expected. Review the <a href="#testing-or-in-production">Testing or In production section</a>.</p>
+
+      <h3>The JSON type is wrong</h3>
+      <p>Create a new client whose application type is <strong>Desktop app</strong>. A Web client, service account, API key, token file, or arbitrary credentials file will be rejected.</p>
+
+      <h3>An old authorization tab was used</h3>
+      <p>Close tabs from earlier attempts and start setup again. Every attempt has a new state value and PKCE verifier; only the newest tab can complete the current listener.</p>
+
+      <h3>The browser cannot reach 127.0.0.1</h3>
+      <p>Keep the Castles command running while Google redirects. Local firewall controls, hardened browser settings, privacy extensions, containers, or remote-shell boundaries can block the loopback connection. Allow the local redirect or retry in a standard browser environment. Castles does not bypass browser controls.</p>
+
+      <h3>The callback times out</h3>
+      <p>Castles waits five minutes. A timeout does not reveal one exact cause. Authorization may not have been completed, an old tab may have been used, browser controls may have blocked the redirect, a Testing account may not be allowed, or Google may have denied the application before callback. Start a new attempt.</p>
+
+      <h3>Multiple Downloads candidates appear</h3>
+      <p>Castles will not choose silently. Select the intended numbered file, cancel and move unrelated client files elsewhere, or pass the intended path explicitly.</p>
+
+      <h3>The browser does not open</h3>
+      <p>Use <code>castles setup --no-browser</code> and open the printed newest URL yourself. The loopback listener must still be reachable on the same machine.</p>
+
+      <h3>Replacing existing authorization</h3>
+      <p>Use <code>castles setup --force</code> to require a fresh Google authorization. A failed, denied, cancelled, malformed, or incomplete attempt preserves the prior token. A successful exchange with the exact required scope replaces it atomically.</p>
+
+      <h3>Revoke and retry</h3>
+      <p>Run <code>castles logout</code>, revoke the grant in Google Account third-party connections if desired, then run setup again. Removing the local token and revoking the Google grant are separate actions.</p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="wrap footer-grid">
+      <p>Castles is open-source software licensed under Apache-2.0.</p>
+      <nav aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="setup.html">Setup</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="support.html">Support</a>
+        <a href="https://github.com/luigiverona/castles/security/policy">Security policy</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

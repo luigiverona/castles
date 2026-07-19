@@ -12,15 +12,22 @@ from hashlib import sha256
 from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock, patch
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from google.auth.exceptions import RefreshError, TransportError
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from oauthlib.oauth2 import OAuth2Error
 
 from castles.config.setting import TokenStore
-from castles.core.error import AuthorizationError
+from castles.core.error import (
+    AuthorizationError,
+    MalformedCredentialsError,
+    MissingScopeError,
+    TokenPersistenceError,
+    UnexpectedScopeError,
+)
 from castles.provider.gmail.auth import SCOPE, authorize, load, parse
 from castles.provider.gmail.client import Gmail
 from castles.provider.gmail.loopback import HOST, MAX_IGNORED, OAuthFlow, run
@@ -31,7 +38,7 @@ URL = "https://accounts.example/authorize"
 
 def client(path: Path) -> Path:
     path.write_text(
-        '{"installed":{"client_id":"id","client_secret":"secret","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token"}}'
+        '{"installed":{"client_id":"synthetic-client.apps.googleusercontent.com","client_secret":"synthetic-secret","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","redirect_uris":["http://localhost"]}}'
     )
     return path
 
@@ -43,6 +50,9 @@ def credential(
     value.valid = valid
     value.expired = expired
     value.refresh_token = refresh
+    value.token = "synthetic-access"
+    value.scopes = (SCOPE,)
+    value.granted_scopes = None
     value.to_json.return_value = '{"token":"private"}'
     return value
 
@@ -222,6 +232,8 @@ def test_new_authorization_uses_pkce_and_no_browser(tmp_path: Path) -> None:
     flow = MagicMock()
     fresh = credential()
     store = TokenStore(tmp_path / "token.json")
+    store.save(saved_credentials(expired=False).to_json())  # type: ignore[no-untyped-call]
+    previous = cast(str, store.load())
     with (
         patch(
             "castles.provider.gmail.auth.InstalledAppFlow.from_client_secrets_file",
@@ -237,6 +249,93 @@ def test_new_authorization_uses_pkce_and_no_browser(tmp_path: Path) -> None:
         "autogenerate_code_verifier": True,
     }
     callback.assert_called_once_with(flow, no_browser=True)
+    assert store.load() == '{"token":"private"}'
+    assert store.load() != previous
+
+
+def test_real_authorization_url_uses_exact_scope_pkce_s256_and_entropy() -> None:
+    configuration = {
+        "installed": {
+            "client_id": "synthetic-client.apps.googleusercontent.com",
+            "client_secret": "synthetic-secret",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": ["http://localhost"],
+        }
+    }
+    flow = InstalledAppFlow.from_client_config(
+        configuration, scopes=(SCOPE,), autogenerate_code_verifier=True
+    )
+    flow.redirect_uri = "http://127.0.0.1:45678/"
+    url, _ = flow.authorization_url(access_type="offline", prompt="consent")
+    query = parse_qs(urlsplit(url).query)
+
+    assert query["scope"] == [SCOPE]
+    assert query["code_challenge_method"] == ["S256"]
+    assert len(query["code_challenge"][0]) == 43
+    assert flow.code_verifier is not None
+    assert 43 <= len(flow.code_verifier) <= 128
+
+
+@pytest.mark.parametrize(
+    ("scopes", "token", "error"),
+    [
+        ((), "synthetic-access", MissingScopeError),
+        ((SCOPE, "https://synthetic.example/scope"), "synthetic-access", UnexpectedScopeError),
+        ((SCOPE,), None, MalformedCredentialsError),
+    ],
+)
+def test_invalid_new_credentials_never_replace_previous_authorization(
+    tmp_path: Path,
+    scopes: tuple[str, ...],
+    token: str | None,
+    error: type[AuthorizationError],
+) -> None:
+    path = tmp_path / "token.json"
+    store = TokenStore(path)
+    store.save(saved_credentials(expired=False).to_json())  # type: ignore[no-untyped-call]
+    previous = path.read_bytes()
+    fresh = credential()
+    fresh.scopes = scopes
+    fresh.token = token
+    flow = MagicMock()
+
+    with (
+        patch(
+            "castles.provider.gmail.auth.InstalledAppFlow.from_client_secrets_file",
+            return_value=flow,
+        ),
+        patch("castles.provider.gmail.auth.run", return_value=fresh),
+        pytest.raises(error) as caught,
+    ):
+        authorize(client(tmp_path / "client.json"), store, force=True)
+
+    assert path.read_bytes() == previous
+    rendered = str(caught.value)
+    assert "synthetic-access" not in rendered
+    assert "synthetic.example" not in rendered
+
+
+def test_failed_token_persistence_preserves_previous_authorization(tmp_path: Path) -> None:
+    path = tmp_path / "token.json"
+    store = TokenStore(path)
+    store.save(saved_credentials(expired=False).to_json())  # type: ignore[no-untyped-call]
+    previous = path.read_bytes()
+    fresh = credential()
+
+    with (
+        patch(
+            "castles.provider.gmail.auth.InstalledAppFlow.from_client_secrets_file",
+            return_value=MagicMock(),
+        ),
+        patch("castles.provider.gmail.auth.run", return_value=fresh),
+        patch("castles.config.setting.os.replace", side_effect=OSError("synthetic-private")),
+        pytest.raises(TokenPersistenceError, match="preserved") as caught,
+    ):
+        authorize(client(tmp_path / "client.json"), store, force=True)
+
+    assert path.read_bytes() == previous
+    assert "synthetic-private" not in str(caught.value)
 
 
 def test_authorization_config_and_load_failures(tmp_path: Path) -> None:
@@ -396,6 +495,17 @@ def test_loopback_ignores_probes_then_accepts_exact_callback() -> None:
     assert flow.fetches == 1
 
 
+def test_loopback_rejects_wrong_path_and_unsupported_method_then_accepts_callback() -> None:
+    flow = Flow()
+    thread, outcome = start(flow)
+    assert request(flow, "GET", f"/callback?state={STATE}&code=private-code")[0] == 404
+    assert request(flow, "POST", f"/?state={STATE}&code=private-code")[0] == 405
+    assert request(flow, "GET", f"/?state={STATE}&code=code")[0] == 200
+    finish(thread, outcome)
+    assert outcome.error is None
+    assert flow.fetches == 1
+
+
 def test_loopback_fixed_host_does_not_require_reverse_dns() -> None:
     flow = Flow()
     with patch("http.server.socket.getfqdn", side_effect=OSError("unavailable")):
@@ -478,8 +588,9 @@ def test_loopback_denial_and_request_limit() -> None:
     assert request(flow, "GET", f"/?state={STATE}&error=access_denied")[0] == 200
     finish(thread, outcome)
     assert isinstance(outcome.error, AuthorizationError)
-    assert "denied" in str(outcome.error)
-    assert "read-only" in str(outcome.error)
+    assert "denial" in str(outcome.error)
+    assert "Testing" in str(outcome.error)
+    assert "setup.html" in str(outcome.error)
 
     failed = Flow()
     thread, outcome = start(failed)
@@ -511,10 +622,10 @@ def test_loopback_timeout_browser_bind_and_exchange_failures(
             monotonic=lambda: next(moments),
             report=lambda _: None,
         )
-    assert "Google page stalled" in str(caught.value)
-    assert "clean Firefox or Chromium" in str(caught.value)
-    assert "localhost failed" in str(caught.value)
-    assert "--no-browser" in str(caught.value)
+    assert "old browser tab" in str(caught.value)
+    assert "loopback redirect" in str(caught.value)
+    assert "project is in Testing" in str(caught.value)
+    assert "setup.html" in str(caught.value)
 
     release = threading.Event()
     moments = iter((10.0, 311.0))

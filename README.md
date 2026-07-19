@@ -14,14 +14,9 @@ marketing relationship. Castles does not modify mail, fetch links, follow redire
 mailbox data, run a server, or provide telemetry. Gmail data travels only between Google and the
 local Castles process; there is no Castles backend in that path.
 
-The current stable release is **0.1.2**. Public onboarding that does not require a user-supplied
-OAuth client is being prepared for Google review and is not currently available or approved by
-Google. Version 0.1.2 is intended for advanced users who explicitly configure their own Google
-desktop OAuth client.
-
 ## Privacy and Gmail access
 
-Version 0.1.2 supports Gmail only and requests exactly:
+Castles supports Gmail only and requests exactly:
 
 ```text
 https://www.googleapis.com/auth/gmail.readonly
@@ -69,24 +64,37 @@ uv tool install https://github.com/luigiverona/castles/releases/download/v0.1.2/
 castles --version
 ```
 
-## Create a Google desktop OAuth client
+## Set up Google authorization
 
-1. Open Google Cloud Console and create or select a project.
-2. Enable the Gmail API.
-3. Configure the OAuth consent screen for the intended users.
-4. Create an OAuth client ID with application type **Desktop app**.
-5. Download the client JSON. Keep it private and never commit it.
-6. Run setup with its path:
+Castles intentionally uses a Google Desktop OAuth client owned by you. The normal setup command
+explains the requirement, reuses a private managed client, or asks before using a valid client from
+your Downloads directory:
 
 ```bash
-castles setup /path/to/google-desktop-client.json
+castles setup
 ```
 
-Castles can also discover a valid conventional filename in the current user's `Downloads`
-directory, without recursion, when no path is supplied. Use `--no-browser` if the default browser
-cannot be opened. Complete only the newest authorization tab and never share the sensitive URL.
-See [OAuth setup and troubleshooting](docs/oauth.md) for clean-browser guidance, safe retries, the
-five-minute listener lifetime, refresh behavior, and information that must remain private.
+Follow the **[complete Google OAuth setup guide](https://castles.luigiverona.dev/setup.html)** to
+create the personal Google Cloud project, enable Gmail API, add only the exact
+`https://www.googleapis.com/auth/gmail.readonly` scope, and download a Desktop app client. Keep the
+JSON private and never commit or post it. Castles stores a normalized private managed copy locally;
+it does not delete the source.
+
+Advanced users can bypass discovery and prompts with the compatible positional path:
+
+```bash
+castles setup /private/path/to/google-desktop-client.json
+```
+
+Testing projects allow only listed test users and this Gmail authorization currently expires after
+seven days. Moving a personal project to In production removes those Testing-specific limits, but
+does not mean Google verified or endorsed it and may show an unverified warning. Review the current
+Google requirements in the setup guide before changing status.
+
+Mailbox processing and authorization remain local; there is no Castles backend. Use `--no-browser`
+only if the default browser cannot open, and never share the printed sensitive URL. See the
+[technical OAuth reference](docs/oauth.md) for resolution precedence, callback behavior, safe
+retry, refresh, revocation, and deletion details.
 
 ## Scan and inspect
 
@@ -153,7 +161,7 @@ boundaries. See [the architecture](docs/architecture.md), [detection model](docs
 
 ## Limitations
 
-- Gmail is the only provider in 0.1.2.
+- Gmail is the only provider in 0.1.3.
 - Message headers can be spoofed. Gmail raw messages provide no per-header provenance, so Castles
   does not treat raw `Authentication-Results` fields as authenticated identity evidence.
 - Conservative resolution intentionally under-merges organizations with multiple domains.
@@ -182,6 +190,7 @@ Only synthetic messages and reserved/example domains belong in tests. See
 ## Project resources
 
 - [Website](https://castles.luigiverona.dev/)
+- [Google OAuth setup guide](https://castles.luigiverona.dev/setup.html)
 - [Privacy policy](https://castles.luigiverona.dev/privacy.html)
 - [Support](https://castles.luigiverona.dev/support.html)
 - [Issue tracker](https://github.com/luigiverona/castles/issues)

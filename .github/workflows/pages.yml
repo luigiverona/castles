@@ -28,6 +28,7 @@ jobs:
           set -euo pipefail
           test -f site/index.html
           test -f site/privacy.html
+          test -f site/setup.html
           test -f site/support.html
           test -f site/style.css
           test -f site/logo.svg
@@ -38,7 +39,7 @@ jobs:
           bash -n site/install
           test "$(cat site/CNAME)" = "castles.luigiverona.dev"
           test -z "$(find site -type l -print -quit)"
-          test "$(find site -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort)" = "$(printf '%s\n' CNAME favicon.svg index.html install logo.svg privacy.html style.css support.html)"
+          test "$(find site -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort)" = "$(printf '%s\n' CNAME favicon.svg index.html install logo.svg privacy.html setup.html style.css support.html)"
           ! grep -RInE '<script|<form|https?://[^" ]+\.(js|css|woff2?|ttf|otf)([?"#]|$)' site
           ! grep -RInE '(gh[pousr]_[A-Za-z0-9]{30,}|AIza[0-9A-Za-z_-]{30,}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY)' site
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0

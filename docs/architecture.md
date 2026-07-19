@@ -20,6 +20,25 @@ the only narrow abstractions. `wiring.py` is the sole normal composition root. I
 core independence, prevents application imports of concrete adapters, and prevents CLI access to
 Gmail, SQLite, parsing, detection, and configuration adapters except through composition.
 
+Guided setup follows one explicit path:
+
+```text
+explicit / managed / confirmed Downloads client
+-> bounded Desktop-client validation
+-> normalized private managed import
+-> PKCE S256 authorization
+-> state-checked 127.0.0.1 loopback callback
+-> exact-scope and credential validation
+-> atomic token persistence
+```
+
+Resolution and prompt decisions live in the setup application use case behind a narrow terminal
+port. Typer implements that delivery boundary. The config adapter owns filesystem discovery,
+regular-file validation, normalization, and atomic managed-client persistence. The Gmail adapter
+owns authorization URL construction, loopback callback handling, token exchange, scope validation,
+refresh, and token serialization. Importing a client and replacing a token are separate operations;
+authorization failures never replace the prior token.
+
 Parsing limits are 25 MiB raw bytes, 200 MIME parts, depth 12, 512 KiB per decoded text payload,
 256 KiB combined normalized text, 1,000 subject characters, 200 URLs, and 4,096 characters per URL.
 Attachments and active or hidden HTML elements are excluded. Only URL hostnames leave parsing.

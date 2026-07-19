@@ -16,7 +16,15 @@ from wsgiref.simple_server import WSGIRequestHandler, WSGIServer, make_server
 from google.oauth2.credentials import Credentials
 from oauthlib.oauth2 import OAuth2Error
 
-from castles.core.error import AuthorizationError
+from castles.app.setup import GUIDE_URL
+from castles.core.error import (
+    AuthorizationDeniedError,
+    AuthorizationError,
+    BrowserOpenError,
+    CallbackTimeoutError,
+    StaleCallbackError,
+    TokenExchangeError,
+)
 
 HOST = "127.0.0.1"
 PATH = "/"
@@ -126,14 +134,22 @@ class Application:
                 start,
                 "Gmail OAuth callback state did not match; close stale authorization tabs and "
                 "retry setup",
+                StaleCallbackError,
             )
         if (len(codes) == 1) == (len(errors) == 1) or (codes and not codes[0]):
             return self._fail(start, "Gmail OAuth callback was malformed")
         if errors:
-            self.state.error = AuthorizationError(
-                "Gmail authorization was denied; retry setup and approve read-only access"
+            self.state.error = (
+                AuthorizationDeniedError(
+                    "Google returned an authorization denial. Castles cannot determine whether the "
+                    "cause was Deny, the Testing user list, browser controls, or a Google policy "
+                    "decision. Review the Testing guidance and retry.\n\n"
+                    f"Guide:\n{GUIDE_URL}#testing-or-in-production"
+                )
                 if errors[0] == "access_denied"
-                else "Gmail authorization failed at Google; retry setup using the newest tab"
+                else AuthorizationError(
+                    "Gmail authorization failed at Google; retry setup using the newest tab"
+                )
             )
         self.state.response = f"{self.redirect}?{query}"
         return self._respond(start, HTTPStatus.OK, "Authorization received. Return to Castles.")
@@ -142,8 +158,9 @@ class Application:
         self,
         start: Callable[[str, list[tuple[str, str]]], object],
         message: str,
+        error: type[AuthorizationError] = AuthorizationError,
     ) -> list[bytes]:
-        self.state.error = AuthorizationError(message)
+        self.state.error = error(message)
         return self._respond(start, HTTPStatus.BAD_REQUEST, "Invalid OAuth callback.")
 
     @staticmethod
@@ -219,13 +236,15 @@ def run(
             )
         while state.response is None and state.error is None:
             if not no_browser and browser_done.is_set() and not browser_opened:
-                raise AuthorizationError("browser could not open; retry setup with --no-browser")
+                raise BrowserOpenError("browser could not open; retry setup with --no-browser")
             remaining = deadline - monotonic()
             if remaining <= 0:
-                raise AuthorizationError(
-                    "Google authorization did not return to Castles within five minutes; if the "
-                    "Google page stalled, retry in a clean Firefox or Chromium profile; if "
-                    "localhost failed, retry with --no-browser and the newest URL"
+                raise CallbackTimeoutError(
+                    "Google authorization did not return to Castles within five minutes. Possible "
+                    "causes include: authorization was not completed; an old browser tab was used; "
+                    "browser controls blocked the loopback redirect; the project is in Testing and "
+                    "the account is not allowed; or Google denied the application before callback. "
+                    f"Retry with the newest tab.\n\nGuide:\n{GUIDE_URL}#troubleshooting"
                 )
             server.timeout = min(POLL_SECONDS, remaining)
             server.connection_timeout = min(CONNECTION_SECONDS, remaining)
@@ -236,7 +255,7 @@ def run(
         try:
             flow.fetch_token(authorization_response=response)
         except (OSError, ValueError, OAuth2Error):
-            raise AuthorizationError(
+            raise TokenExchangeError(
                 "Gmail token exchange failed; retry setup using the newest authorization tab"
             ) from None
         return flow.credentials

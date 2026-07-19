@@ -16,6 +16,17 @@ Never submit OAuth client JSON, tokens, mailbox addresses, messages, sender addr
 message keys, databases, exports, or other private user data. If private reporting is unavailable,
 open a minimal public issue asking for a private channel without vulnerability details.
 
+Google Desktop client JSON is sensitive local configuration even though an installed application
+cannot keep its client secret confidential from someone controlling that application. Castles uses
+no shared OAuth credential. It validates the user's file, imports only required fields into a
+private managed copy, never stores the source path, and never deletes the source. On POSIX systems,
+private Castles directories use mode `0700` and the managed client and token use mode `0600`.
+
+Setup code and support must never log, render, request, or collect client IDs, client secrets,
+project IDs, OAuth files, authorization URLs, callback queries, codes, state, PKCE values, tokens,
+Google passwords, session cookies, app passwords, browser profiles, or mailbox addresses. No
+support request should contain an OAuth file or URL.
+
 The security boundary covers local Gmail read-only processing. Important mitigations include exact
 least-privilege scope, PKCE and state-validated loopback OAuth on `127.0.0.1`, bounded parsing,
 attachment exclusion, no URL fetching, private local permissions, canonical fingerprinted storage,

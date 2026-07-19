@@ -10,6 +10,7 @@ SITE = ROOT / "site"
 PAGES = {
     "index.html": "https://castles.luigiverona.dev/",
     "privacy.html": "https://castles.luigiverona.dev/privacy.html",
+    "setup.html": "https://castles.luigiverona.dev/setup.html",
     "support.html": "https://castles.luigiverona.dev/support.html",
 }
 FILES = {
@@ -19,6 +20,7 @@ FILES = {
     "install",
     "logo.svg",
     "privacy.html",
+    "setup.html",
     "style.css",
     "support.html",
 }
@@ -183,6 +185,84 @@ def test_support_page_prohibits_private_reports() -> None:
         "private vulnerability-reporting flow",
     )
     assert all(value in text for value in required)
+
+
+def test_setup_guide_is_complete_current_and_non_misleading() -> None:
+    text = (SITE / "setup.html").read_text().casefold()
+    required = (
+        "what you are creating",
+        "before starting",
+        "create a dedicated project",
+        "enable the gmail api",
+        "configure the oauth application",
+        "add data access",
+        "testing or in production",
+        "create a desktop app client",
+        "run castles setup",
+        "google warning screens",
+        "after setup",
+        "revocation and deletion",
+        "troubleshooting",
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "testing authorization currently expires seven days",
+        "application remains unverified",
+        "does not mean google has verified, approved, or endorsed",
+        "public castles does not ask users to trust a shared unverified client",
+        "castles setup /private/path/to/google-desktop-client.json",
+        "castles setup --no-browser",
+        "castles scan",
+        "castles results",
+        "castles logout",
+        "127.0.0.1",
+    )
+    for value in required:
+        assert value in text
+    forbidden = (
+        "google-approved",
+        "google approved",
+    )
+    assert all(value not in text for value in forbidden)
+
+
+def test_setup_links_use_official_google_documentation() -> None:
+    document = documents()["setup.html"]
+    links = {
+        attrs["href"]
+        for tag, attrs in document.tags
+        if tag == "a" and attrs.get("href", "").startswith("https://")
+    }
+    required = {
+        "https://support.google.com/cloud/answer/15544987",
+        "https://support.google.com/cloud/answer/15549945",
+        "https://support.google.com/cloud/answer/15549135",
+        "https://support.google.com/cloud/answer/15549257",
+        "https://support.google.com/cloud/answer/7454865",
+        "https://developers.google.com/identity/protocols/oauth2/native-app",
+    }
+    assert required <= links
+
+
+def test_setup_navigation_and_homepage_onboarding_order() -> None:
+    for name, document in documents().items():
+        navigation = [
+            attrs.get("href")
+            for tag, attrs in document.tags
+            if tag == "a" and attrs.get("href") == "setup.html"
+        ]
+        assert navigation, name
+    homepage = (SITE / "index.html").read_text().casefold()
+    positions = tuple(
+        homepage.index(value)
+        for value in (
+            "install castles",
+            "create a personal client",
+            "castles setup",
+            "castles scan",
+        )
+    )
+    assert positions == tuple(sorted(positions))
+    assert "undergoing google verification" not in homepage
+    assert "shared public oauth" not in homepage
 
 
 def test_svg_branding_is_local_and_passive() -> None:

@@ -12,9 +12,8 @@ import pytest
 from castles.app.doctor import Check, Health, healthy
 from castles.app.export import CSV_COLUMNS, csv_export, json_export, write
 from castles.app.results import ResultSet
-from castles.app.setup import Setup
 from castles.app.show import show
-from castles.core.message import Mailbox, NormalizedMessage
+from castles.core.message import NormalizedMessage
 from castles.core.scan import ScanMode, ScanResult, ScanStatus
 from castles.detect.build import discover
 from castles.detect.extract import extract
@@ -98,19 +97,3 @@ def test_show_and_health() -> None:
     assert show(values(), "missing.example") == ()
     assert healthy((Check("one", Health.OK, "ok"), Check("two", Health.WARN, "missing")))
     assert not healthy((Check("one", Health.FAIL, "bad"),))
-
-
-def test_setup_orchestration(tmp_path: Path) -> None:
-    calls: list[object] = []
-
-    def configure(path: Path) -> None:
-        calls.append(path)
-
-    def authorize(force: bool, no_browser: bool) -> Mailbox:
-        calls.append((force, no_browser))
-        return Mailbox("gmail", "person@example.com", "person@example.com")
-
-    source = tmp_path / "client.json"
-    mailbox = Setup(configure, authorize).execute(source, force=True, no_browser=True)
-    assert mailbox.provider == "gmail"
-    assert calls == [source, (True, True)]
