@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.1.4 - 2026-07-19
+
+- Fix HTML parsing when a hidden styled container contains styled descendants, while continuing
+  to exclude hidden text and links and preserve visible content and links.
+- Process destructive BeautifulSoup snapshots descendant-first so decomposed ancestors cannot
+  invalidate descendants retained by later traversal steps.
+- Convert bounded HTML parser failures into privacy-safe rejected messages so one malformed
+  message produces a partial scan instead of aborting the mailbox scan.
+
 ## 0.1.3 - 2026-07-19
 
 - Add guided `castles setup` with deterministic explicit/managed/interactive Downloads client

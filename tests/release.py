@@ -34,7 +34,7 @@ def repository_files() -> tuple[Path, ...]:
 def test_version_changelog_and_lock_are_consistent() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())
     lock = tomllib.loads((ROOT / "uv.lock").read_text())
-    assert project["project"]["version"] == __version__ == "0.1.3"
+    assert project["project"]["version"] == __version__ == "0.1.4"
     package = next(item for item in lock["package"] if item["name"] == "castles")
     assert package["version"] == __version__
     assert f"## {__version__} - 2026-07-19" in (ROOT / "CHANGELOG.md").read_text()

@@ -161,7 +161,7 @@ boundaries. See [the architecture](docs/architecture.md), [detection model](docs
 
 ## Limitations
 
-- Gmail is the only provider in 0.1.3.
+- Gmail is the only provider in 0.1.4.
 - Message headers can be spoofed. Gmail raw messages provide no per-header provenance, so Castles
   does not treat raw `Authentication-Results` fields as authenticated identity evidence.
 - Conservative resolution intentionally under-merges organizations with multiple domains.

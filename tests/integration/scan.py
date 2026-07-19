@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import AbstractContextManager, nullcontext
 from datetime import UTC, datetime, timedelta
+from email.message import EmailMessage
 from pathlib import Path
 
 import pytest
@@ -21,6 +22,8 @@ from castles.core.scan import ScanMode, ScanStatus
 from castles.core.signal import MessageSignals
 from castles.detect.build import discover
 from castles.detect.extract import extract
+from castles.parse import html as html_parser
+from castles.parse.mime import parse as parse_message
 from castles.provider.port import MailboxQuery, ProviderCheck
 from castles.store.lock import FileLocks
 from castles.store.sqlite import SQLite
@@ -243,6 +246,64 @@ def test_parser_skip_marks_partial_nonfull(setup: tuple[SQLite, Path]) -> None:
     assert (result.processed, result.skipped) == (1, 1)
     account = store.accounts()[0][0]
     assert store.checkpoint(account) is not None
+
+
+def test_real_mime_parser_rejection_keeps_scanning_valid_html(
+    setup: tuple[SQLite, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store, _ = setup
+    marker = "synthetic-parser-rejection"
+
+    class HTMLProvider(Provider):
+        def fetch(self, ref: MessageRef) -> RawMessage:
+            message = EmailMessage()
+            if ref.key == "opaque-a":
+                message["From"] = "alerts@first-service.example"
+                content = (
+                    '<div style="display:none"><span style="color:red">secret</span>'
+                    '<a href="https://hidden.example/private">hidden</a></div>'
+                    '<p>visible first</p><a href="https://first-service.example/path">first</a>'
+                )
+            elif ref.key == "opaque-b":
+                message["From"] = "alerts@rejected-service.example"
+                content = f"<p>{marker}</p>"
+            else:
+                message["From"] = "alerts@second-service.example"
+                content = (
+                    '<p>visible last</p><a href="https://second-service.example/path">second</a>'
+                )
+            message.add_alternative(content, subtype="html")
+            return RawMessage(ref, message.as_bytes(), NOW)
+
+    production_extract = html_parser._extract
+
+    def rejecting(value: str) -> tuple[str, tuple[str, ...]]:
+        if marker in value:
+            raise AttributeError("synthetic private parser detail")
+        return production_extract(value)
+
+    monkeypatch.setattr(html_parser, "_extract", rejecting)
+    provider = HTMLProvider(("opaque-a", "opaque-b", "opaque-c"))
+    result = Scan(
+        provider,
+        store,
+        parse_message,
+        extract,
+        discover,
+        Locks(),
+        now=lambda: NOW,
+    ).execute(ScanRequest())
+
+    assert result.status is ScanStatus.PARTIAL
+    assert (result.discovered, result.processed, result.skipped) == (3, 2, 1)
+    account = store.accounts()[0][0]
+    assert {value.message_key for value in store.signals(account)} == {"opaque-a", "opaque-c"}
+    assert {value.entity for value in store.findings(account)} == {
+        "first-service.example",
+        "second-service.example",
+    }
+    assert store.checkpoint(account) is not None
+    assert store.scan(account).status is ScanStatus.PARTIAL  # type: ignore[union-attr]
 
 
 def test_fetch_transport_failure_fails_without_advancing_checkpoint(
