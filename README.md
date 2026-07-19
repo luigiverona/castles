@@ -48,7 +48,7 @@ less /tmp/castles-install
 bash /tmp/castles-install
 ```
 
-The bootstrap downloads only the version-pinned 0.1.2 wheel from the official GitHub release,
+The bootstrap downloads only the version-pinned 0.1.3 wheel from the official GitHub release,
 checks it against an embedded SHA-256 digest, and gives the verified local wheel to `uv`. uv may
 contact configured Python package indexes to resolve the wheel's declared runtime dependencies.
 HTTPS authenticates delivery of the bootstrap and the embedded digest authenticates the wheel;
@@ -57,10 +57,10 @@ bootstrap and its digest, so use the inspect-first flow or manually verify the r
 that trust boundary is unsuitable.
 
 As a manual installation alternative, install the immutable versioned wheel directly after
-verifying it against `castles-0.1.2-SHA256SUMS.txt` from the same release:
+verifying it against `castles-0.1.3-SHA256SUMS.txt` from the same release:
 
 ```bash
-uv tool install https://github.com/luigiverona/castles/releases/download/v0.1.2/castles-0.1.2-py3-none-any.whl
+uv tool install https://github.com/luigiverona/castles/releases/download/v0.1.3/castles-0.1.3-py3-none-any.whl
 castles --version
 ```
 
