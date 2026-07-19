@@ -37,16 +37,37 @@ and [security policy](SECURITY.md).
 
 ## Install
 
-Python 3.12 or newer is required. The official initial install uses the versioned GitHub release
-wheel:
+The verified quick installer supports Linux and macOS and requires Bash, `curl`, `uv`, and an
+already-installed Python 3.12 or newer. It does not use `sudo`, install Python or uv, edit shell
+startup files, run OAuth setup, or access a mailbox.
+
+```bash
+curl -fsSL https://castles.luigiverona.dev/install | bash
+```
+
+To inspect the complete bootstrap before running it:
+
+```bash
+curl -fsSLo /tmp/castles-install https://castles.luigiverona.dev/install
+less /tmp/castles-install
+bash /tmp/castles-install
+```
+
+The bootstrap downloads only the version-pinned 0.1.2 wheel from the official GitHub release,
+checks it against an embedded SHA-256 digest, and gives the verified local wheel to `uv`. uv may
+contact configured Python package indexes to resolve the wheel's declared runtime dependencies.
+HTTPS authenticates delivery of the bootstrap and the embedded digest authenticates the wheel;
+this is not independent code signing. A compromise of the website could replace both the
+bootstrap and its digest, so use the inspect-first flow or manually verify the release assets when
+that trust boundary is unsuitable.
+
+As a manual installation alternative, install the immutable versioned wheel directly after
+verifying it against `castles-0.1.2-SHA256SUMS.txt` from the same release:
 
 ```bash
 uv tool install https://github.com/luigiverona/castles/releases/download/v0.1.2/castles-0.1.2-py3-none-any.whl
 castles --version
 ```
-
-Verify the wheel against `castles-0.1.2-SHA256SUMS.txt` on the same release before installation when
-your environment requires artifact verification.
 
 ## Create a Google desktop OAuth client
 

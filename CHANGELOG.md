@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a checksum-verified, version-pinned quick installer and publish its inspectable command on the
+  website without changing runtime, OAuth behavior, or the 0.1.2 package version.
 - Harden repository documentation, package metadata, contribution guidance, CI safeguards, and
   GitHub governance without changing application behavior or the 0.1.2 package version.
 

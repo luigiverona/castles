@@ -22,6 +22,22 @@ attachment exclusion, no URL fetching, private local permissions, canonical fing
 parameterized SQLite, staged full scans, read-only local queries, sanitized errors, pinned CI
 actions, dependency audits, and synthetic fixtures.
 
+## Quick-installer trust boundary
+
+The public bootstrap at `https://castles.luigiverona.dev/install` pins an immutable release wheel
+URL and validates the downloaded wheel against an exact embedded SHA-256 digest before passing the
+local file to uv. The downloaded release checksum manifest is corroborating metadata, not a
+separate trust root. uv may contact configured Python package indexes to resolve declared runtime
+dependencies, but the bootstrap requires an existing local Python 3.12 or newer and disables uv's
+automatic Python downloads.
+
+HTTPS authenticates delivery of the bootstrap, and the bootstrap's embedded digest authenticates
+the wheel. This is not independent code signing: compromise of the website could replace the
+bootstrap and its digest together. Users can download and inspect the bootstrap before execution,
+or download the immutable GitHub release assets and verify their checksums manually instead. A
+floating latest-release URL is deliberately not used because it cannot bind reviewed installer
+code to one exact version, asset, URL, and digest.
+
 For authorization failure modes, safe retry steps, token-file behavior, and the complete list of
 OAuth information that must not be posted, see [OAuth setup and troubleshooting](docs/oauth.md).
 

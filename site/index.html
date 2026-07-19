@@ -87,10 +87,10 @@
         <div>
           <p class="eyebrow">Current stable release</p>
           <h2 id="install-title">Install Castles 0.1.2</h2>
-          <p>Python 3.12 or newer and <code>uv</code> are required. Verify the release checksum before installation when your environment requires artifact verification.</p>
+          <p>On Linux or macOS, the verified installer requires Bash, <code>curl</code>, <code>uv</code>, and a local Python 3.12 or newer. It pins and verifies the release wheel and does not run setup or access Gmail.</p>
+          <p>Prefer to inspect it first? Download <a href="install">the bootstrap</a>, review it, then run it with Bash.</p>
         </div>
-        <pre><code>uv tool install https://github.com/luigiverona/castles/releases/download/v0.1.2/castles-0.1.2-py3-none-any.whl
-castles --version</code></pre>
+        <pre><code>curl -fsSL https://castles.luigiverona.dev/install | bash</code></pre>
       </div>
     </section>
 
