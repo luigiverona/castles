@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from email.message import EmailMessage
 
 import pytest
-from bs4 import Tag
+from bs4 import BeautifulSoup, Tag
 
 from castles.core.error import ParsingError
 from castles.core.message import MessageRef, RawMessage
@@ -116,6 +116,14 @@ def test_html_destructive_snapshots_are_processed_descendant_first(
     assert order == ["child", "parent"]
     assert text == "visible"
     assert links == ()
+
+
+def test_html_destructive_snapshot_skips_an_already_decomposed_tag() -> None:
+    soup = BeautifulSoup("<div hidden>secret</div><p>visible</p>", "html.parser")
+    element = soup.find("div")
+    assert isinstance(element, Tag)
+    html_parser._decompose((element, element))
+    assert soup.get_text(" ", strip=True) == "visible"
 
 
 def test_html_malformed_anchors_and_mixed_visibility() -> None:
