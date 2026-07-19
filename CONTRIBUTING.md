@@ -17,7 +17,16 @@ branch coverage must remain at least 90%; strict mypy, Ruff, Import Linter, buil
 pass. Security reports follow [SECURITY.md](SECURITY.md), not public issues.
 
 Maintainer releases require matching versions in `pyproject.toml` and `castles.__version__`, a dated
-changelog entry, the complete validation gate, inspected wheel and sdist contents, and verified
-checksums. Release tags and GitHub releases are created only from reviewed `main` commits.
+changelog entry, and the complete validation gate. Build and validate the wheel, sdist, metadata,
+manifests, and checksums before publishing immutable intended release assets. Verify those published
+assets, record the final wheel digest, then update the bootstrap's pinned version, filename, URL,
+and digest in a separate reviewed change or another proven safe release sequence. Run the installer
+contract tests and verify the live Pages installer after deployment. Never turn the bootstrap into
+a dynamic latest-release installer. Release tags and GitHub releases are created only from reviewed
+`main` commits.
+
+The release sdist must contain exactly the eight files in `site/`, with `site/install` executable;
+the wheel must contain no `site/` files. Keep those exact manifests synchronized with the Pages and
+packaging gates instead of replacing them with wildcards.
 
 By participating, you agree to [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).

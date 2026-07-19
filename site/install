@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+umask 077
+export LC_ALL=C
+
+readonly VERSION='0.1.2'
+readonly RELEASE_TAG='v0.1.2'
+readonly WHEEL_FILENAME='castles-0.1.2-py3-none-any.whl'
+readonly WHEEL_URL='https://github.com/luigiverona/castles/releases/download/v0.1.2/castles-0.1.2-py3-none-any.whl'
+readonly WHEEL_SHA256='05670b8d8fdfc9244e2192c9d0d0be3d045bbb28927f7a8b3c09405d294916db'
+
+TEMP_DIR=''
+
+say() {
+  printf '%s\n' "$*"
+}
+
+fail() {
+  printf 'castles installer: %s\n' "$*" >&2
+  exit 1
+}
+
+cleanup() {
+  readonly status=$?
+  trap - EXIT HUP INT TERM
+  if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+    rm -rf -- "${TEMP_DIR:?}"
+  fi
+  exit "$status"
+}
+
+interrupted() {
+  readonly signal_status=$1
+  exit "$signal_status"
+}
+
+trap cleanup EXIT
+trap 'interrupted 129' HUP
+trap 'interrupted 130' INT
+trap 'interrupted 143' TERM
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || fail "$1 is required but was not found on PATH."
+}
+
+if [ "$#" -ne 0 ]; then
+  fail 'this installer does not accept arguments.'
+fi
+
+if [ "$RELEASE_TAG" != "v$VERSION" ]; then
+  fail 'the embedded release metadata is internally inconsistent.'
+fi
+
+require_command bash
+require_command uname
+
+case "$(uname -s)" in
+  Linux | Darwin) ;;
+  *) fail 'only Linux and macOS are supported.' ;;
+esac
+
+require_command curl
+require_command uv
+require_command python3
+
+if ! python_path="$(python3 -c 'import os, sys; print(os.path.realpath(sys.executable)); raise SystemExit(sys.version_info < (3, 12))')"; then
+  fail 'Python 3.12 or newer is required; install it separately and ensure python3 is on PATH.'
+fi
+readonly python_path
+
+if [ -z "$python_path" ] || [ ! -f "$python_path" ] || [ ! -x "$python_path" ]; then
+  fail 'python3 did not resolve to a usable local interpreter.'
+fi
+
+if ! uv_tools_dir="$(uv tool dir --no-python-downloads --color never --no-config)"; then
+  fail 'uv could not determine its tool directory.'
+fi
+if ! uv_bin_dir="$(uv tool dir --bin --no-python-downloads --color never --no-config)"; then
+  fail 'uv could not determine its tool binary directory.'
+fi
+readonly uv_tools_dir uv_bin_dir
+
+case "$uv_tools_dir" in
+  /*) ;;
+  *) fail 'uv returned a non-absolute tool directory.' ;;
+esac
+case "$uv_bin_dir" in
+  /*) ;;
+  *) fail 'uv returned a non-absolute tool binary directory.' ;;
+esac
+
+readonly uv_executable="$uv_bin_dir/castles"
+readonly managed_environment_suffix=" ($uv_tools_dir/castles)"
+readonly managed_executable_line="- castles ($uv_executable)"
+managed_environment=0
+managed_executable=0
+
+if ! tool_list="$(uv tool list --show-paths --color never --no-config)"; then
+  fail 'uv could not inspect its installed tools.'
+fi
+
+while IFS= read -r line; do
+  case "$line" in
+    "castles v"*"$managed_environment_suffix") managed_environment=1 ;;
+  esac
+  if [ "$line" = "$managed_executable_line" ]; then
+    managed_executable=1
+  fi
+done <<EOF
+$tool_list
+EOF
+
+if [ "$managed_environment" -ne "$managed_executable" ]; then
+  fail 'uv reported an inconsistent existing Castles tool; resolve it with uv before retrying.'
+fi
+
+existing_executable="$(command -v castles 2>/dev/null || true)"
+if [ -n "$existing_executable" ] && [ "$existing_executable" != "$uv_executable" ]; then
+  fail "an existing Castles executable is not managed by this uv tool directory: $existing_executable"
+fi
+
+reinstall=0
+if [ "$managed_environment" -eq 1 ]; then
+  reinstall=1
+  if [ -f "$uv_executable" ] && [ -x "$uv_executable" ]; then
+    installed_version="$($uv_executable --version 2>/dev/null || true)"
+    if [ "$installed_version" = "Castles $VERSION" ]; then
+      say "Castles $VERSION is already installed."
+      if [ "$existing_executable" != "$uv_executable" ]; then
+        say "The executable directory is not on PATH: $uv_bin_dir"
+        say 'Add it to PATH manually before running Castles.'
+      fi
+      exit 0
+    fi
+  fi
+elif [ -e "$uv_executable" ] || [ -L "$uv_executable" ]; then
+  fail "refusing to overwrite an executable that uv does not report as managed: $uv_executable"
+fi
+
+readonly temp_base="${TMPDIR:-/tmp}"
+if ! TEMP_DIR="$(mktemp -d "$temp_base/castles-install.XXXXXXXX")"; then
+  fail 'could not create a private temporary directory.'
+fi
+readonly TEMP_DIR
+readonly wheel_path="$TEMP_DIR/$WHEEL_FILENAME"
+
+say "Downloading Castles $VERSION..."
+if ! curl \
+  --fail \
+  --silent \
+  --show-error \
+  --location \
+  --proto '=https' \
+  --proto-redir '=https' \
+  --connect-timeout 15 \
+  --max-time 300 \
+  --retry 2 \
+  --retry-delay 1 \
+  --output "$wheel_path" \
+  "$WHEEL_URL"; then
+  fail "download failed: $WHEEL_URL"
+fi
+
+if [ ! -f "$wheel_path" ] || [ -L "$wheel_path" ] || [ ! -s "$wheel_path" ]; then
+  fail "the downloaded wheel is empty or not a regular file: $WHEEL_URL"
+fi
+
+if ! actual_sha256="$($python_path -c 'import hashlib, pathlib, sys; print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())' "$wheel_path")"; then
+  fail 'could not calculate the downloaded wheel SHA-256.'
+fi
+readonly actual_sha256
+
+if [ "${#actual_sha256}" -ne 64 ]; then
+  fail 'the SHA-256 calculator returned a malformed digest.'
+fi
+case "$actual_sha256" in
+  *[!0-9a-f]*) fail 'the SHA-256 calculator returned a malformed digest.' ;;
+esac
+
+if [ "$actual_sha256" != "$WHEEL_SHA256" ]; then
+  printf 'castles installer: wheel checksum mismatch\n' >&2
+  printf '  asset:    %s\n' "$WHEEL_URL" >&2
+  printf '  expected: %s\n' "$WHEEL_SHA256" >&2
+  printf '  actual:   %s\n' "$actual_sha256" >&2
+  exit 1
+fi
+
+say 'Checksum verified.'
+say "Installing Castles $VERSION with uv..."
+if [ "$reinstall" -eq 1 ]; then
+  if ! uv tool install --reinstall --python "$python_path" --no-python-downloads --color never --no-config "$wheel_path"; then
+    fail 'uv could not reinstall the verified Castles wheel.'
+  fi
+else
+  if ! uv tool install --python "$python_path" --no-python-downloads --color never --no-config "$wheel_path"; then
+    fail 'uv could not install the verified Castles wheel.'
+  fi
+fi
+
+if [ ! -f "$uv_executable" ] || [ ! -x "$uv_executable" ]; then
+  fail "uv did not create the expected executable: $uv_executable"
+fi
+
+installed_version="$($uv_executable --version 2>/dev/null || true)"
+if [ "$installed_version" != "Castles $VERSION" ]; then
+  fail "post-install validation failed; expected Castles $VERSION, got: ${installed_version:-no output}"
+fi
+
+say "Installed Castles $VERSION."
+if [ "$(command -v castles 2>/dev/null || true)" != "$uv_executable" ]; then
+  say "The executable directory is not on PATH: $uv_bin_dir"
+  say 'Add it to PATH manually before running Castles.'
+fi
+say 'Next steps:'
+say '  castles --version'
+say '  castles setup /path/to/google-desktop-client.json'
+say '  castles scan'
+say '  castles results'

@@ -16,6 +16,7 @@ FILES = {
     "CNAME",
     "favicon.svg",
     "index.html",
+    "install",
     "logo.svg",
     "privacy.html",
     "style.css",
