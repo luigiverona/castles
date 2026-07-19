@@ -48,7 +48,7 @@ castles = "castles.cli.main:app"
 [dependency-groups]
 dev = [
   "import-linter>=2.3,<3",
-  "mypy>=1.16,<2",
+  "mypy>=2.3.0,<3",
   "pip-audit>=2.9,<3",
   "pytest>=9,<10",
   "pytest-cov>=6,<8",
