@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy policy for Castles Gmail read-only access and local data processing.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <link rel="canonical" href="https://castles.luigiverona.dev/privacy.html">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>Privacy policy — Castles</title>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="index.html" aria-label="Castles home">
+        <img src="logo.svg" width="224" height="56" alt="Castles">
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a aria-current="page" href="privacy.html">Privacy</a>
+        <a href="support.html">Support</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="policy">
+    <article class="wrap prose">
+      <p class="eyebrow">Effective July 15, 2026</p>
+      <h1>Castles privacy policy</h1>
+      <p class="lede">Castles is a distributed command-line application that processes authorized Gmail data on the user’s own device. There is no Castles account and no Castles-operated backend receiving Gmail data.</p>
+
+      <h2>Gmail permission</h2>
+      <p>Castles requests exactly <code>https://www.googleapis.com/auth/gmail.readonly</code>. Google classifies this as a restricted scope. The scope allows viewing Gmail messages and settings, but Castles uses only the Gmail profile, message, and history interfaces needed to identify the authorized mailbox, enumerate message changes, and retrieve messages for analysis. Castles does not use Gmail settings interfaces.</p>
+      <p>Read-only access means Castles cannot send, modify, delete, label, move, draft, or compose mail.</p>
+
+      <h2>Gmail data Castles reads and why</h2>
+      <p>During a scan, Castles may read message timestamps, selected headers, sender and reply-routing domains, visible subject and body text, and hostnames from visible or unsubscribe links. This evidence is used to discover external entities and explain indicators such as authentication, billing, subscription, commerce, support, activity, lifecycle, or marketing relationships.</p>
+      <p>Gmail metadata-only access is insufficient because it excludes message bodies and therefore cannot provide the visible wording and link-host evidence required for the declared relationship-discovery functionality.</p>
+
+      <h2>Local processing and minimized storage</h2>
+      <p>Raw RFC message bytes, addresses, local parts, subjects, bodies, HTML, complete URLs, message headers, and attachment content are handled ephemerally by a bounded local parser. Castles does not persist raw messages or attachments.</p>
+      <p>Castles stores privacy-minimized derived data in a local SQLite database: opaque provider message keys, observation times, normalized domains, signal categories and strengths, policy and explanation identifiers, scan checkpoints, and final findings. Normal results and exports omit provider message keys and mailbox addresses.</p>
+
+      <h2>Network use and sharing</h2>
+      <p>The local application connects to Google only for OAuth authorization, token refresh, Gmail scanning, or an explicitly requested online provider check. Gmail data and findings are not uploaded to Castles, the Castles website, GitHub Pages, Cloudflare, analytics services, advertising services, or any other Castles-controlled service.</p>
+      <p>Google’s OAuth and Gmail API infrastructure necessarily processes requests to grant and provide the user-authorized access. Castles does not otherwise sell, rent, disclose, or share Google user data. The maintainer has no human access to a user’s Gmail data through Castles.</p>
+
+      <h2>OAuth authorization</h2>
+      <p>OAuth access and refresh tokens are stored separately from findings in a private local regular file. On POSIX systems, Castles restricts sensitive files to mode <code>0600</code> and private directories to <code>0700</code>. Refresh tokens are used only to obtain replacement read-only access tokens from Google without requiring repeated browser consent.</p>
+
+      <h2>No advertising, telemetry, or model training</h2>
+      <p>Castles has no advertising, tracking pixels, analytics, telemetry, automatic error reporting, or automatic report upload. Google user data is not used for advertising, credit decisions, surveillance, or training generalized artificial-intelligence or machine-learning models.</p>
+
+      <h2>Google API Services User Data Policy</h2>
+      <p>Castles’ use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including its Limited Use requirements. This statement describes the application’s implemented data practices and is not a claim of certification by Google.</p>
+
+      <h2 id="retention">Retention, authorization removal, and local deletion</h2>
+      <p>Retention is controlled by files on the user’s device. Castles does not retain Gmail data on a server.</p>
+      <ol>
+        <li>Run <code>castles logout</code> to remove the saved local authorization token. This does not delete findings or revoke the grant at Google.</li>
+        <li>To revoke the grant, remove Castles from the third-party connections page in the user’s Google Account.</li>
+        <li>To remove findings, close Castles and delete <code>castles.db</code> from the platform-native Castles state directory: <code>~/.local/state/castles</code> on Linux by default, <code>~/Library/Application Support/castles</code> on macOS, or <code>%LOCALAPPDATA%\castles</code> on Windows.</li>
+        <li>To remove all local Castles configuration and state, delete both <code>~/.config/castles</code> and <code>~/.local/state/castles</code> on Linux by default, the Castles directory under <code>~/Library/Application Support</code> on macOS, or the Castles directory under <code>%LOCALAPPDATA%</code> on Windows. Custom XDG locations override Linux defaults.</li>
+        <li>Delete JSON or CSV exports separately from the locations the user selected when creating them.</li>
+      </ol>
+      <p>Deleting an OAuth client JSON originally supplied by an advanced user remains that user’s responsibility; Castles never deletes the source file.</p>
+
+      <h2>Website privacy</h2>
+      <p>This static website has no forms, cookies, analytics, tracking pixels, remote fonts, third-party scripts, account creation, or OAuth callback handling. It receives no Gmail data. GitHub Pages hosts the static files, and Cloudflare provides authoritative DNS only; their ordinary infrastructure handling is governed by their own policies.</p>
+
+      <h2>Support, privacy questions, and security reports</h2>
+      <p>Follow the <a href="support.html">support page</a> for privacy-safe contact options. Never send mailbox content, OAuth information, tokens, databases, or exports. Security vulnerabilities must use the repository’s private security-reporting channel.</p>
+
+      <h2>Policy changes</h2>
+      <p>Material changes to Gmail-data access or handling will be reflected here and in the application documentation before release. The effective date at the top identifies this policy version.</p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="wrap footer-grid">
+      <p>Castles is open-source software licensed under Apache-2.0.</p>
+      <nav aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="support.html">Support</a>
+        <a href="https://github.com/luigiverona/castles/security/policy">Security policy</a>
+        <a href="https://github.com/luigiverona/castles">Source code</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

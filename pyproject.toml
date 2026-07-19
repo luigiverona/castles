@@ -1,0 +1,136 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "castles"
+version = "0.1.2"
+description = "Local-first Gmail relationship discovery with privacy-minimized SQLite storage."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{name = "luigiverona"}]
+keywords = ["cli", "gmail", "local-first", "privacy", "sqlite"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Communications :: Email",
+  "Topic :: Security",
+]
+dependencies = [
+  "beautifulsoup4>=4.13,<5",
+  "google-api-python-client>=2.170,<3",
+  "google-auth>=2.40,<3",
+  "google-auth-oauthlib>=1.2,<2",
+  "idna>=3.10,<4",
+  "platformdirs>=4.3,<5",
+  "rich>=14,<15",
+  "typer>=0.21,<1",
+]
+
+[project.urls]
+Homepage = "https://castles.luigiverona.dev/"
+Documentation = "https://github.com/luigiverona/castles#readme"
+Repository = "https://github.com/luigiverona/castles"
+Issues = "https://github.com/luigiverona/castles/issues"
+Changelog = "https://github.com/luigiverona/castles/blob/main/CHANGELOG.md"
+Privacy = "https://castles.luigiverona.dev/privacy.html"
+Support = "https://castles.luigiverona.dev/support.html"
+Security = "https://github.com/luigiverona/castles/security/policy"
+
+[project.scripts]
+castles = "castles.cli.main:app"
+
+[dependency-groups]
+dev = [
+  "import-linter>=2.3,<3",
+  "mypy>=1.16,<2",
+  "pip-audit>=2.9,<3",
+  "pytest>=9,<10",
+  "pytest-cov>=6,<8",
+  "ruff>=0.12,<1",
+  "types-beautifulsoup4>=4.12,<5",
+  "types-oauthlib>=3.3,<4",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/castles"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src", "tests", "docs", "site", ".github", "/.gitattributes", "/.gitignore", "/.python-version",
+  "README.md", "LICENSE", "CHANGELOG.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md",
+  "SECURITY.md", "pyproject.toml", "uv.lock",
+]
+exclude = [
+  "**/__pycache__/**", "**/*.pyc", "/.import_linter_cache/**", "/.mypy_cache/**",
+  "/.pytest_cache/**", "/.ruff_cache/**", "/.smoke/**", "/dist/**",
+]
+
+[tool.hatch.build]
+include = [
+  "src/castles/detect/data/*",
+  "src/castles/store/sql/*.sql",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4", "RUF", "S"]
+ignore = ["B008", "E501", "S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["castles"]
+
+[[tool.mypy.overrides]]
+module = ["googleapiclient.*", "google_auth_oauthlib.*"]
+ignore_missing_imports = true
+disallow_untyped_calls = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["*.py"]
+addopts = "--strict-markers --strict-config"
+
+[tool.coverage.run]
+branch = true
+source = ["castles"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+omit = ["src/castles/__main__.py"]
+
+[tool.importlinter]
+root_package = "castles"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Core is independent"
+type = "forbidden"
+source_modules = ["castles.core"]
+forbidden_modules = ["castles.app", "castles.cli", "castles.config", "castles.detect", "castles.parse", "castles.provider", "castles.store", "castles.wiring", "google", "platformdirs", "rich", "sqlite3", "typer"]
+
+[[tool.importlinter.contracts]]
+name = "Application does not import adapters"
+type = "forbidden"
+source_modules = ["castles.app"]
+forbidden_modules = ["castles.cli", "castles.config", "castles.parse", "castles.provider.gmail", "castles.store.sqlite", "castles.wiring", "google", "platformdirs", "rich", "sqlite3", "typer"]
+
+[[tool.importlinter.contracts]]
+name = "CLI composes only through wiring"
+type = "forbidden"
+source_modules = ["castles.cli"]
+forbidden_modules = ["castles.config", "castles.detect", "castles.parse", "castles.provider.gmail", "castles.store.sqlite", "google", "platformdirs", "sqlite3"]
+ignore_imports = ["castles.cli.main -> castles.wiring"]

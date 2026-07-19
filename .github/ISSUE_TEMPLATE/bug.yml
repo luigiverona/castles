@@ -1,0 +1,26 @@
+name: Bug report
+description: Report a reproducible Castles defect with synthetic data.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Never include mailbox data, credentials, tokens, databases, or exports.
+  - type: input
+    id: version
+    attributes:
+      label: Castles version
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Synthetic reproduction
+    validations:
+      required: true

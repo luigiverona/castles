@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy-safe support and security-reporting guidance for Castles.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <link rel="canonical" href="https://castles.luigiverona.dev/support.html">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>Support — Castles</title>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="index.html" aria-label="Castles home">
+        <img src="logo.svg" width="224" height="56" alt="Castles">
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy</a>
+        <a aria-current="page" href="support.html">Support</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="policy">
+    <article class="wrap prose">
+      <p class="eyebrow">Privacy-safe help</p>
+      <h1>Castles support</h1>
+      <p class="lede">Most support questions can be handled with a sanitized description and synthetic reproduction. Your mailbox data does not belong in an issue, email, screenshot, recording, or chat transcript.</p>
+
+      <section class="danger" aria-labelledby="never-send">
+        <h2 id="never-send">Never submit private mailbox or OAuth data</h2>
+        <p>Do not submit or attach:</p>
+        <ul>
+          <li>email addresses or local parts;</li>
+          <li>message subjects or bodies;</li>
+          <li>complete URLs, message IDs, or headers;</li>
+          <li>OAuth URLs, callback parameters, authorization codes, tokens, or state values;</li>
+          <li>Google client JSON or client secrets;</li>
+          <li>Castles databases, exports, token files, or raw mailbox data.</li>
+        </ul>
+      </section>
+
+      <h2>Setup and general problems</h2>
+      <p>Search existing issues first. A public setup issue may include the Castles version, operating system, sanitized command name, sanitized error text, and reproducible steps that contain no private values.</p>
+      <p><a class="button" href="https://github.com/luigiverona/castles/issues/new/choose">Open the issue chooser</a></p>
+
+      <h2>Detection feedback</h2>
+      <p>Public feedback must use a synthetic reproduction. Replace private wording with equivalent invented wording, use reserved domains such as <code>service.example</code> or <code>example.com</code>, and state expected versus actual behavior. Do not name a real company or propose company-specific rules.</p>
+      <p>A failing synthetic corpus case is required before a production detection-policy change.</p>
+
+      <h2>Security vulnerabilities</h2>
+      <p>Do not open a public issue. Use GitHub’s private vulnerability-reporting flow and include only a concise impact description and synthetic reproduction. If private reporting is unavailable, open a minimal public issue asking for a private channel without vulnerability details.</p>
+      <p><a class="button secondary" href="https://github.com/luigiverona/castles/security/advisories/new">Report a vulnerability privately</a></p>
+
+      <h2>Privacy questions</h2>
+      <p>Use the same data-minimization rules above. If a privacy question would require private information, request a private channel without posting that information publicly.</p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="wrap footer-grid">
+      <p>Castles is open-source software licensed under Apache-2.0.</p>
+      <nav aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="https://github.com/luigiverona/castles/security/policy">Security policy</a>
+        <a href="https://github.com/luigiverona/castles/releases">Releases</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

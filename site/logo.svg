@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 56" role="img" aria-labelledby="title description">
+  <title id="title">Castles</title>
+  <desc id="description">A geometric gold castle gate beside the Castles wordmark.</desc>
+  <rect width="56" height="56" rx="14" fill="#0b1530"/>
+  <path fill="#e9a91b" d="M10 14h8v7h6v-7h8v7h6v-7h8v13H10z"/>
+  <path fill="#f8eed6" d="M13 25h30v21H13zm11 8a4 4 0 0 1 8 0v13h-8z" fill-rule="evenodd"/>
+  <path fill="#b9e3ff" d="M17 30h4v5h-4zm18 0h4v5h-4z"/>
+  <text x="69" y="38" fill="#0b1530" font-family="ui-sans-serif, system-ui, sans-serif" font-size="30" font-weight="760" letter-spacing="-1">Castles</text>
+</svg>

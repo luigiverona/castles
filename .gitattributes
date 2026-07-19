@@ -1,0 +1,3 @@
+src/castles/detect/data/suffix.dat binary
+src/castles/detect/data/infra.toml binary
+src/castles/store/sql/*.sql binary

@@ -1,0 +1,20 @@
+name: Setup or authorization problem
+description: Report Google desktop OAuth setup or Gmail authorization trouble.
+title: "[Setup] "
+labels: [setup]
+body:
+  - type: markdown
+    attributes:
+      value: Never paste OAuth JSON, client secrets, authorization URLs, tokens, or mailbox addresses.
+  - type: input
+    id: version
+    attributes:
+      label: Castles version and operating system
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Sanitized steps and error
+    validations:
+      required: true

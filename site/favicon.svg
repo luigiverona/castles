@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Castles</title>
+  <rect width="64" height="64" rx="16" fill="#0b1530"/>
+  <path fill="#e9a91b" d="M11 15h9v8h7v-8h10v8h7v-8h9v15H11z"/>
+  <path fill="#f8eed6" d="M15 28h34v24H15zm12 9a5 5 0 0 1 10 0v15H27z" fill-rule="evenodd"/>
+  <path fill="#b9e3ff" d="M19 34h5v6h-5zm21 0h5v6h-5z"/>
+</svg>

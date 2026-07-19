@@ -1,0 +1,68 @@
+schema = 1
+identifier = "castles.infrastructure.2026-07-14"
+version = "1"
+reviewed = "2026-07-14"
+
+[[rules]]
+domain = "sendgrid.net"
+match = "subtree"
+status = "known"
+kind = "tracking"
+code = "infra.tracking.sendgrid"
+source = "https://www.twilio.com/docs/sendgrid/ui/analytics-and-reporting/click-tracking-html-best-practices"
+
+[[rules]]
+domain = "sendgrid.info"
+match = "subtree"
+status = "known"
+kind = "tracking"
+code = "infra.tracking.sendgrid"
+source = "https://www.twilio.com/docs/sendgrid/ui/analytics-and-reporting/click-tracking-html-best-practices"
+
+[[rules]]
+domain = "sendgrid.me"
+match = "subtree"
+status = "known"
+kind = "tracking"
+code = "infra.tracking.sendgrid"
+source = "https://www.twilio.com/docs/sendgrid/ui/analytics-and-reporting/click-tracking-html-best-practices"
+
+[[rules]]
+domain = "amazonses.com"
+match = "subtree"
+status = "known"
+kind = "mail"
+code = "infra.mail.ses"
+source = "https://docs.aws.amazon.com/ses/latest/dg/mail-from.html"
+
+[[rules]]
+domain = "cloudfront.net"
+match = "subtree"
+status = "known"
+kind = "cdn"
+code = "infra.cdn.cloudfront"
+source = "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-creating-console.html"
+
+[[rules]]
+domain = "pm.mtasv.net"
+match = "exact"
+status = "known"
+kind = "mail"
+code = "infra.mail.postmark"
+source = "https://postmarkapp.com/support/article/910-how-do-i-add-a-custom-return-path"
+
+[[rules]]
+domain = "mandrillapp.com"
+match = "subtree"
+status = "ambiguous"
+kind = "tracking"
+code = "infra.ambiguous.mandrill"
+source = "https://mailchimp.com/developer/transactional/docs/activity-reports/"
+
+[[rules]]
+domain = "mailchi.mp"
+match = "subtree"
+status = "ambiguous"
+kind = "marketing"
+code = "infra.ambiguous.mailchimp"
+source = "https://mailchimp.com/help/landing-page-urls/"

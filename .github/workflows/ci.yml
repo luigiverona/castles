@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --all-groups
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy src tests
+      - run: uv run lint-imports
+
+  tests:
+    strategy:
+      matrix:
+        python: ["3.12", "3.13"]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - run: uv sync --frozen --all-groups
+      - run: uv run pytest --cov=castles --cov-branch --cov-report=term-missing --cov-fail-under=90
+      - name: Enforce 90% branch coverage
+        shell: bash
+        run: |
+          uv run coverage json -o "$RUNNER_TEMP/coverage.json"
+          uv run python -c 'import json, os, pathlib; data = json.loads(pathlib.Path(os.environ["RUNNER_TEMP"], "coverage.json").read_text()); total = data["totals"]; covered = total["covered_branches"]; branches = total["num_branches"]; rate = covered / branches; print(f"Branch coverage: {covered}/{branches} ({rate:.2%})"); raise SystemExit(rate < 0.90)'
+
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+      - run: uv sync --frozen --all-groups
+      - run: uv build --clear
+      - name: Inspect resources
+        run: |
+          wheel=$(find dist -name '*.whl' -print -quit)
+          sdist=$(find dist -name '*.tar.gz' -print -quit)
+          python -m zipfile -l "$wheel" > "$RUNNER_TEMP/wheel-manifest.txt"
+          python -m tarfile -l "$sdist" > "$RUNNER_TEMP/sdist-manifest.txt"
+          grep 'castles/detect/data/suffix.dat' "$RUNNER_TEMP/wheel-manifest.txt"
+          grep 'castles/detect/data/infra.toml' "$RUNNER_TEMP/wheel-manifest.txt"
+          grep 'castles/store/sql/001_init.sql' "$RUNNER_TEMP/wheel-manifest.txt"
+          ! grep -E '(tests/|docs/|site/|\.github/|__pycache__|\.pyc$|mailtrace)' "$RUNNER_TEMP/wheel-manifest.txt"
+          for resource in site/CNAME site/favicon.svg site/index.html site/logo.svg site/privacy.html site/style.css site/support.html; do
+            grep -Eq "/$resource[[:space:]]*$" "$RUNNER_TEMP/sdist-manifest.txt"
+          done
+          test "$(grep -Ec '/site/[^/]+[[:space:]]*$' "$RUNNER_TEMP/sdist-manifest.txt")" -eq 7
+          ! grep -E '(__pycache__|\.pyc$|\.import_linter_cache|\.mypy_cache|\.pytest_cache|\.ruff_cache|/\.smoke/|/dist/|mailtrace)' "$RUNNER_TEMP/sdist-manifest.txt"
+      - run: uv venv --python 3.12 .smoke && uv pip install --python .smoke/bin/python dist/*.whl
+      - name: Installed-wheel offline smoke
+        shell: bash
+        run: |
+          export HOME="$RUNNER_TEMP/home"
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/config"
+          export XDG_STATE_HOME="$RUNNER_TEMP/state"
+          cd "$RUNNER_TEMP"
+          "$GITHUB_WORKSPACE/.smoke/bin/castles" --help
+          "$GITHUB_WORKSPACE/.smoke/bin/castles" doctor
+          test ! -e "$RUNNER_TEMP/state/castles/castles.db"
+
+  platforms:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen --all-groups
+      - name: Platform-sensitive tests
+        run: uv run pytest tests/unit/config.py tests/unit/oauth.py tests/cli/main.py tests/integration/wiring.py
+      - run: uv build --wheel
+      - name: Installed-wheel offline smoke
+        shell: bash
+        run: |
+          uv venv --python 3.12 .smoke
+          uv pip install --python .smoke dist/*.whl
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            castles=.smoke/Scripts/castles.exe
+          else
+            castles=.smoke/bin/castles
+          fi
+          export HOME="$RUNNER_TEMP/home"
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/config"
+          export XDG_STATE_HOME="$RUNNER_TEMP/state"
+          export APPDATA="$RUNNER_TEMP/roaming"
+          export LOCALAPPDATA="$RUNNER_TEMP/local"
+          export WIN_PD_OVERRIDE_APPDATA="$RUNNER_TEMP/roaming"
+          export WIN_PD_OVERRIDE_LOCAL_APPDATA="$RUNNER_TEMP/local"
+          export USERPROFILE="$RUNNER_TEMP/home"
+          "$castles" --version
+          "$castles" --help
+          "$castles" doctor
+          "$castles" results
+          "$castles" export --format json --output "$RUNNER_TEMP/results.json"

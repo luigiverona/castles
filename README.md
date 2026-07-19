@@ -1,0 +1,176 @@
+# Castles
+
+Castles is a local-first Python CLI that discovers which external entities appear to have a
+relationship with an explicitly authorized Gmail mailbox. It discovers domains from message
+evidence instead of using a predefined company catalog, keeps raw content ephemeral, and stores
+only privacy-minimized signals and findings in SQLite.
+
+A billing message from `billing@unknown-saas.example` can produce an `unknown-saas.example`
+finding with independent identity and billing strength, first/last seen times, and a related-message
+count. Scores are deterministic heuristic strengths, not probabilities.
+
+Castles does not claim that you own or still have an account. Marketing evidence only supports a
+marketing relationship. Castles does not modify mail, fetch links, follow redirects, use AI, upload
+mailbox data, run a server, or provide telemetry. Gmail data travels only between Google and the
+local Castles process; there is no Castles backend in that path.
+
+The current stable release is **0.1.2**. Public onboarding that does not require a user-supplied
+OAuth client is being prepared for Google review and is not currently available or approved by
+Google. Version 0.1.2 is intended for advanced users who explicitly configure their own Google
+desktop OAuth client.
+
+## Privacy and Gmail access
+
+Version 0.1.2 supports Gmail only and requests exactly:
+
+```text
+https://www.googleapis.com/auth/gmail.readonly
+```
+
+Authorization uses Google's installed-application loopback flow bound to `127.0.0.1`, with PKCE,
+state checking, an exact callback path, a five-minute deadline, and bounded unrelated requests.
+Credentials and state remain in private Castles directories. `results`, `show`, `export`, and the
+default `doctor` mode are offline and do not construct a Gmail client.
+
+See [the privacy model](docs/privacy.md), [public privacy policy](https://castles.luigiverona.dev/privacy.html),
+and [security policy](SECURITY.md).
+
+## Install
+
+Python 3.12 or newer is required. The official initial install uses the versioned GitHub release
+wheel:
+
+```bash
+uv tool install https://github.com/luigiverona/castles/releases/download/v0.1.2/castles-0.1.2-py3-none-any.whl
+castles --version
+```
+
+Verify the wheel against `castles-0.1.2-SHA256SUMS.txt` on the same release before installation when
+your environment requires artifact verification.
+
+## Create a Google desktop OAuth client
+
+1. Open Google Cloud Console and create or select a project.
+2. Enable the Gmail API.
+3. Configure the OAuth consent screen for the intended users.
+4. Create an OAuth client ID with application type **Desktop app**.
+5. Download the client JSON. Keep it private and never commit it.
+6. Run setup with its path:
+
+```bash
+castles setup /path/to/google-desktop-client.json
+```
+
+Castles can also discover a valid conventional filename in the current user's `Downloads`
+directory, without recursion, when no path is supplied. Use `--no-browser` if the default browser
+cannot be opened. Complete only the newest authorization tab and never share the sensitive URL.
+See [OAuth setup and troubleshooting](docs/oauth.md) for clean-browser guidance, safe retries, the
+five-minute listener lifetime, refresh behavior, and information that must remain private.
+
+## Scan and inspect
+
+```bash
+castles scan
+castles results
+castles show unknown-saas.example
+```
+
+The first scan examines at most the preceding 365 days. Later scans use the provider checkpoint and
+fall back to a seven-day overlap if that checkpoint is stale.
+
+```bash
+castles scan --since 2026-01-01T00:00:00+00:00
+castles scan --full
+```
+
+A full scan stages a complete replacement. Any bounded parser skip makes that full scan partial and
+preserves the previous active results and checkpoint.
+
+## Export and maintenance
+
+```bash
+castles export --format json --output castles.json
+castles export --format csv --output castles.csv
+castles doctor
+castles doctor --provider
+castles logout
+```
+
+JSON uses Castles export schema version 1. CSV has a fixed documented contract. `logout` removes
+saved Castles Gmail authorization only; it does not remove findings.
+
+## Local paths
+
+Castles uses platform-native directories via `platformdirs`. Typical Linux locations are:
+
+```text
+~/.config/castles
+~/.local/state/castles/castles.db
+```
+
+Castles does not import or alter state from other applications.
+
+Raw messages, complete addresses, subjects, bodies, HTML, URLs, and attachments are not persisted.
+OAuth authorization is stored separately from findings in a private local file. Normal results and
+exports omit mailbox addresses and provider message keys. `results`, `show`, `export`, and the
+default `doctor` mode work offline.
+
+## Architecture
+
+The production path is deliberately singular:
+
+```text
+Gmail -> bounded parser -> privacy-minimized signals -> entity discovery
+      -> deterministic findings -> SQLite -> CLI or export
+```
+
+Immutable provider-neutral values live in `core`; `app` orchestrates narrow ports; `parse` and
+`detect` normalize and assess evidence; `provider/gmail` is the only mailbox adapter; `store` owns
+persistence; and `wiring.py` is the composition root. Import Linter enforces the principal module
+boundaries. See [the architecture](docs/architecture.md), [detection model](docs/detection.md), and
+[storage model](docs/storage.md).
+
+## Limitations
+
+- Gmail is the only provider in 0.1.2.
+- Message headers can be spoofed. Gmail raw messages provide no per-header provenance, so Castles
+  does not treat raw `Authentication-Results` fields as authenticated identity evidence.
+- Conservative resolution intentionally under-merges organizations with multiple domains.
+- Unknown suffixes use the PSL prevailing rule and receive an identity score cap.
+- Local users with equivalent privileges or a compromised host can read local state.
+
+## Development
+
+```bash
+git clone https://github.com/luigiverona/castles.git
+cd castles
+uv sync --frozen --all-groups
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy src tests
+uv run lint-imports
+uv run pytest --cov=castles --cov-branch --cov-report=term-missing --cov-fail-under=90
+uv build
+uv run pip-audit
+```
+
+Only synthetic messages and reserved/example domains belong in tests. See
+[CONTRIBUTING.md](CONTRIBUTING.md), [the architecture](docs/architecture.md), and the
+[privacy-safe detection feedback workflow](docs/corpus.md#reporting-detection-feedback-safely).
+
+## Project resources
+
+- [Website](https://castles.luigiverona.dev/)
+- [Privacy policy](https://castles.luigiverona.dev/privacy.html)
+- [Support](https://castles.luigiverona.dev/support.html)
+- [Issue tracker](https://github.com/luigiverona/castles/issues)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
+- [License](LICENSE)
+
+Do not report vulnerabilities or include mailbox data in public issues. Use the private process in
+[SECURITY.md](SECURITY.md).
+
+Licensed under Apache-2.0. The bundled Public Suffix List snapshot retains its MPL-2.0 license and
+provenance notice beside the resource.

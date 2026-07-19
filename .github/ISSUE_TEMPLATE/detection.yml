@@ -1,0 +1,45 @@
+name: Detection quality
+description: Report a detection classification or strength concern using synthetic data.
+title: "[Detection] "
+labels: [detection]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Public issues must contain synthetic data only. Never post raw mailbox content, addresses
+        or local parts, subjects, bodies, URLs, message IDs, headers, OAuth data, databases, exports,
+        or findings. Report security vulnerabilities privately through the Security link.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Problem
+      options: [False positive, False negative, Wrong relationship, Wrong strength, Wrong entity boundary]
+    validations:
+      required: true
+  - type: textarea
+    id: synthetic
+    attributes:
+      label: Synthetic reproduction
+      description: >-
+        Use reserved domains and synthetic local parts. Replace private wording with equivalent
+        synthetic wording; do not identify a real company or request a company-specific rule.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected versus actual behavior
+      description: Describe the classification or score without pasting Castles output.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I used only synthetic content and reserved domains and included no private data.
+          required: true
+        - label: I understand that a failing corpus case is required before production policy changes.
+          required: true
+    validations:
+      required: true

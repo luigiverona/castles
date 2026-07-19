@@ -1,0 +1,13 @@
+Public Suffix List snapshot
+===========================
+
+Source: https://github.com/publicsuffix/list
+Upstream commit: 8eb9e60139cb2c62ccec664554adae3767dc1374
+Upstream commit date: 2026-07-13T21:14:21Z
+Retrieved for review: 2026-07-14
+Snapshot file: suffix.dat
+Snapshot SHA-256: 29497fc30946618d0f01903f1854bc35c7662f221ad8ed3beb1b3738b8ca0fdf
+Sections included: ICANN and PRIVATE
+
+The snapshot is redistributed unmodified under the Mozilla Public License 2.0.
+The complete license is in PUBLIC_SUFFIX_LIST_LICENSE.txt beside this notice.

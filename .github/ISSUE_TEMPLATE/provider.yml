@@ -1,0 +1,17 @@
+name: Provider request
+description: Propose a future mailbox provider adapter.
+title: "[Provider] "
+labels: [provider]
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider
+    validations:
+      required: true
+  - type: textarea
+    id: access
+    attributes:
+      label: Read-only API, authentication, and checkpoint capabilities
+    validations:
+      required: true
