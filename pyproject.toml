@@ -52,7 +52,7 @@ dev = [
   "pip-audit>=2.9,<3",
   "pytest>=9,<10",
   "pytest-cov>=6,<8",
-  "ruff>=0.12,<1",
+  "ruff>=0.15.22,<1",
   "types-beautifulsoup4>=4.12,<5",
   "types-oauthlib>=3.3,<4",
 ]
