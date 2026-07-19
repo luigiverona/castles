@@ -64,12 +64,14 @@ jobs:
           grep 'castles/detect/data/suffix.dat' "$RUNNER_TEMP/wheel-manifest.txt"
           grep 'castles/detect/data/infra.toml' "$RUNNER_TEMP/wheel-manifest.txt"
           grep 'castles/store/sql/001_init.sql' "$RUNNER_TEMP/wheel-manifest.txt"
+          ! grep 'site/setup.html' "$RUNNER_TEMP/wheel-manifest.txt"
           ! grep -E '(tests/|docs/|site/|\.github/|__pycache__|\.pyc$|mailtrace)' "$RUNNER_TEMP/wheel-manifest.txt"
-          for resource in site/CNAME site/favicon.svg site/index.html site/install site/logo.svg site/privacy.html site/style.css site/support.html; do
+          for resource in site/CNAME site/favicon.svg site/index.html site/install site/logo.svg site/privacy.html site/setup.html site/style.css site/support.html; do
             grep -Eq "/$resource[[:space:]]*$" "$RUNNER_TEMP/sdist-manifest.txt"
           done
-          test "$(grep -Ec '/site/[^/]+[[:space:]]*$' "$RUNNER_TEMP/sdist-manifest.txt")" -eq 8
+          test "$(grep -Ec '/site/[^/]+[[:space:]]*$' "$RUNNER_TEMP/sdist-manifest.txt")" -eq 9
           tar -tvf "$sdist" | grep -Eq '^-rwxr-xr-x .* castles-[^/]+/site/install$'
+          ! grep -E '(client_secret_[^/]*\.json|/google\.json|/gmail\.json|/castles\.db|docs/verification\.md)' "$RUNNER_TEMP/sdist-manifest.txt"
           ! grep -E '(__pycache__|\.pyc$|\.import_linter_cache|\.mypy_cache|\.pytest_cache|\.ruff_cache|/\.smoke/|/dist/|mailtrace)' "$RUNNER_TEMP/sdist-manifest.txt"
       - run: uv venv --python 3.12 .smoke && uv pip install --python .smoke/bin/python dist/*.whl
       - name: Installed-wheel offline smoke

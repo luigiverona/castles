@@ -338,6 +338,24 @@ h3 {
   margin-top: 0.55rem;
 }
 
+.contents {
+  margin: 2.5rem 0;
+  padding: 1.5rem;
+  background: var(--sand);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.contents h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.contents ol {
+  columns: 2;
+  margin-bottom: 0;
+}
+
 .danger {
   margin: 2.5rem 0;
   border-color: var(--danger);
@@ -391,6 +409,10 @@ footer a {
   .site-header nav {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .contents ol {
+    columns: 1;
   }
 }
 

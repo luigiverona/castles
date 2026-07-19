@@ -1,16 +1,21 @@
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 
 from castles.app.doctor import Check, Health
 from castles.app.export import csv_export, json_export, write
+from castles.app.port import SetupTerminal
 from castles.app.results import ResultSet, results
 from castles.app.scan import Scan, ScanRequest
-from castles.app.setup import Setup
+from castles.app.setup import DesktopClient, Setup
 from castles.config.path import Paths, private
-from castles.config.setting import TokenStore, discover_client, validate_client, write_private
+from castles.config.setting import (
+    TokenStore,
+    discover_clients,
+    import_client,
+    validate_client,
+)
 from castles.core.error import ConfigurationError, StorageError
 from castles.core.message import Mailbox
 from castles.core.scan import ScanResult
@@ -29,24 +34,26 @@ def _paths() -> Paths:
     return Paths.system()
 
 
-def find_client() -> Path | None:
-    return discover_client(Path.home())
-
-
-def setup_usecase() -> Setup:
+def setup_usecase(terminal: SetupTerminal) -> Setup:
     paths = _paths()
     store = TokenStore(paths.token)
 
-    def configure(source: Path) -> None:
-        document = validate_client(source)
+    def configure(client: DesktopClient) -> None:
         paths.prepare()
-        write_private(paths.client, json.dumps(document, ensure_ascii=False, sort_keys=True))
+        import_client(paths.client, client)
 
     def authentication(force: bool, no_browser: bool) -> Mailbox:
         credentials = authorize(paths.client, store, force=force, no_browser=no_browser)
         return Gmail(credentials).identity()
 
-    return Setup(configure, authentication)
+    return Setup(
+        paths.client,
+        validate_client,
+        configure,
+        lambda: discover_clients(Path.home()),
+        authentication,
+        terminal,
+    )
 
 
 def scan(request: ScanRequest) -> ScanResult:

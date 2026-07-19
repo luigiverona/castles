@@ -20,6 +20,7 @@
       </a>
       <nav aria-label="Primary navigation">
         <a aria-current="page" href="index.html">Home</a>
+        <a href="setup.html">Setup</a>
         <a href="privacy.html">Privacy</a>
         <a href="support.html">Support</a>
       </nav>
@@ -70,15 +71,15 @@
 
     <section class="section steps" aria-labelledby="flow-title">
       <div class="wrap">
-        <p class="eyebrow">The public onboarding goal</p>
-        <h2 id="flow-title">A browser approval, then a local scan</h2>
+        <p class="eyebrow">User-owned authorization</p>
+        <h2 id="flow-title">Your Google project, then a local scan</h2>
         <ol>
           <li><strong>Install Castles.</strong> Use the versioned wheel from the official GitHub release.</li>
-          <li><strong>Authorize read-only access.</strong> Castles opens Google in your browser and listens only on <code>127.0.0.1</code> for the protected desktop callback.</li>
-          <li><strong>Scan locally.</strong> Castles reads authorized Gmail evidence and builds local findings.</li>
-          <li><strong>Review offline.</strong> Results, detail views, and exports do not require Gmail or network access.</li>
+          <li><strong>Create a personal client.</strong> Follow the <a href="setup.html">setup guide</a> to create a Google Desktop OAuth client in a project you control.</li>
+          <li><strong>Run <code>castles setup</code>.</strong> Castles validates and stores a private managed copy, then opens Google for read-only authorization.</li>
+          <li><strong>Scan locally.</strong> Run <code>castles scan</code>, then review findings with <code>castles results</code>.</li>
         </ol>
-        <p class="notice"><strong>Current availability:</strong> public no-file onboarding is undergoing Google verification and is not yet available. Stable version 0.1.2 remains intended for advanced users who explicitly supply their own Google desktop OAuth client.</p>
+        <p class="notice"><strong>Intentional privacy model:</strong> the OAuth client belongs to you. Castles has no shared client or authorization backend, and the maintainer cannot use the client copy stored on your device to access your account.</p>
       </div>
     </section>
 
@@ -107,6 +108,7 @@
     <div class="wrap footer-grid">
       <p>Castles is open-source software licensed under Apache-2.0.</p>
       <nav aria-label="Footer navigation">
+        <a href="setup.html">Setup</a>
         <a href="privacy.html">Privacy policy</a>
         <a href="support.html">Support</a>
         <a href="https://github.com/luigiverona/castles/security/policy">Security policy</a>

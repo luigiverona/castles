@@ -13,7 +13,8 @@ from castles.app.doctor import healthy
 from castles.app.scan import ScanRequest
 from castles.app.show import show as find
 from castles.cli import view
-from castles.core.error import CastlesError, ConfigurationError, InputError
+from castles.cli.setup import Terminal
+from castles.core.error import CastlesError, InputError
 
 app = typer.Typer(
     name="castles",
@@ -55,18 +56,37 @@ def root(
 
 @app.command()
 def setup(
-    client: Path | None = typer.Argument(None, help="Google desktop OAuth client JSON."),
+    client_json: Path | None = typer.Argument(
+        None, help="Google Desktop OAuth client JSON to import and use."
+    ),
     force: bool = typer.Option(False, "--force", help="Replace saved authorization."),
-    no_browser: bool = typer.Option(False, "--no-browser", help="Print the authorization URL."),
+    no_browser: bool = typer.Option(
+        False,
+        "--no-browser",
+        help="Print the sensitive authorization URL instead of opening a browser.",
+    ),
+    non_interactive: bool = typer.Option(
+        False, "--non-interactive", help="Do not discover or prompt for a client file."
+    ),
 ) -> None:
-    """Configure and authorize Gmail read-only access."""
-    source = client or wiring.find_client()
-    if source is None:
-        _call(lambda: _raise(ConfigurationError("supply a Google desktop OAuth client JSON path")))
-        return
-    _call(lambda: wiring.setup_usecase().execute(source, force=force, no_browser=no_browser))
-    console.print("Authorized Gmail with read-only access.")
-    console.print("Next: [bold]castles scan[/bold]")
+    """Start guided Gmail authorization.
+
+    Reuse a managed Google Desktop client, confirm a discovered Downloads client, or show setup
+    instructions. Supply CLIENT_JSON to import and use an explicit client.
+    """
+    terminal = Terminal(console)
+    _call(
+        lambda: wiring.setup_usecase(terminal).execute(
+            client_json,
+            force=force,
+            no_browser=no_browser,
+            non_interactive=non_interactive,
+        )
+    )
+    console.print("Authorization saved.")
+    console.print("Next:")
+    console.print("  [bold]castles scan[/bold]")
+    console.print("  [bold]castles results[/bold]")
 
 
 def _since(value: str | None) -> datetime | None:

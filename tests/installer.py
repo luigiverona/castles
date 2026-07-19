@@ -231,10 +231,10 @@ def test_documentation_and_distribution_contracts() -> None:
     assert '"src/castles"' in pyproject
     assert '"site"' in pyproject
     assert (
-        "CNAME favicon.svg index.html install logo.svg privacy.html style.css support.html"
+        "CNAME favicon.svg index.html install logo.svg privacy.html setup.html style.css support.html"
         in workflow
     )
-    assert "-eq 8" in package_workflow
+    assert "-eq 9" in package_workflow
 
 
 @pytest.mark.parametrize(

@@ -20,6 +20,7 @@
       </a>
       <nav aria-label="Primary navigation">
         <a href="index.html">Home</a>
+        <a href="setup.html">Setup</a>
         <a aria-current="page" href="privacy.html">Privacy</a>
         <a href="support.html">Support</a>
       </nav>
@@ -28,7 +29,7 @@
 
   <main id="main" class="policy">
     <article class="wrap prose">
-      <p class="eyebrow">Effective July 15, 2026</p>
+      <p class="eyebrow">Effective July 19, 2026</p>
       <h1>Castles privacy policy</h1>
       <p class="lede">Castles is a distributed command-line application that processes authorized Gmail data on the user’s own device. There is no Castles account and no Castles-operated backend receiving Gmail data.</p>
 
@@ -49,7 +50,7 @@
       <p>Google’s OAuth and Gmail API infrastructure necessarily processes requests to grant and provide the user-authorized access. Castles does not otherwise sell, rent, disclose, or share Google user data. The maintainer has no human access to a user’s Gmail data through Castles.</p>
 
       <h2>OAuth authorization</h2>
-      <p>OAuth access and refresh tokens are stored separately from findings in a private local regular file. On POSIX systems, Castles restricts sensitive files to mode <code>0600</code> and private directories to <code>0700</code>. Refresh tokens are used only to obtain replacement read-only access tokens from Google without requiring repeated browser consent.</p>
+      <p>The user supplies and owns a Google Desktop OAuth client. Castles validates it and stores a normalized private managed copy locally. The client identifies the user’s Google Cloud project; it does not let the maintainer access the user’s account. OAuth access and refresh tokens are stored separately from findings in a private local regular file. On POSIX systems, Castles restricts sensitive files to mode <code>0600</code> and private directories to <code>0700</code>. Refresh tokens are used only to obtain replacement read-only access tokens from Google without requiring repeated browser consent.</p>
 
       <h2>No advertising, telemetry, or model training</h2>
       <p>Castles has no advertising, tracking pixels, analytics, telemetry, automatic error reporting, or automatic report upload. Google user data is not used for advertising, credit decisions, surveillance, or training generalized artificial-intelligence or machine-learning models.</p>
@@ -66,7 +67,7 @@
         <li>To remove all local Castles configuration and state, delete both <code>~/.config/castles</code> and <code>~/.local/state/castles</code> on Linux by default, the Castles directory under <code>~/Library/Application Support</code> on macOS, or the Castles directory under <code>%LOCALAPPDATA%</code> on Windows. Custom XDG locations override Linux defaults.</li>
         <li>Delete JSON or CSV exports separately from the locations the user selected when creating them.</li>
       </ol>
-      <p>Deleting an OAuth client JSON originally supplied by an advanced user remains that user’s responsibility; Castles never deletes the source file.</p>
+      <p>Deleting an original OAuth client JSON remains the user’s responsibility; Castles never deletes the source file. The private managed client remains in the platform-native Castles configuration directory until that configuration is manually removed.</p>
 
       <h2>Website privacy</h2>
       <p>This static website has no forms, cookies, analytics, tracking pixels, remote fonts, third-party scripts, account creation, or OAuth callback handling. It receives no Gmail data. GitHub Pages hosts the static files, and Cloudflare provides authoritative DNS only; their ordinary infrastructure handling is governed by their own policies.</p>
@@ -84,6 +85,7 @@
       <p>Castles is open-source software licensed under Apache-2.0.</p>
       <nav aria-label="Footer navigation">
         <a href="index.html">Home</a>
+        <a href="setup.html">Setup</a>
         <a href="support.html">Support</a>
         <a href="https://github.com/luigiverona/castles/security/policy">Security policy</a>
         <a href="https://github.com/luigiverona/castles">Source code</a>

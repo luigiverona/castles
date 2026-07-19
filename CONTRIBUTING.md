@@ -16,6 +16,12 @@ Run the complete gate documented in [README.md](README.md#development). New beha
 branch coverage must remain at least 90%; strict mypy, Ruff, Import Linter, build, and audit must
 pass. Security reports follow [SECURITY.md](SECURITY.md), not public issues.
 
+Setup and OAuth tests must use synthetic client structures and mocked boundaries only. Never use a
+real Google account, copied Google client JSON, real client ID or secret, authorization URL, token,
+code, state, verifier, mailbox address, or network-dependent unit test. Test filesystem, terminal,
+browser, callback, exchange, and persistence boundaries independently and assert privacy-safe
+errors.
+
 Maintainer releases require matching versions in `pyproject.toml` and `castles.__version__`, a dated
 changelog entry, and the complete validation gate. Build and validate the wheel, sdist, metadata,
 manifests, and checksums before publishing immutable intended release assets. Verify those published
@@ -25,7 +31,7 @@ contract tests and verify the live Pages installer after deployment. Never turn 
 a dynamic latest-release installer. Release tags and GitHub releases are created only from reviewed
 `main` commits.
 
-The release sdist must contain exactly the eight files in `site/`, with `site/install` executable;
+The release sdist must contain exactly the nine files in `site/`, with `site/install` executable;
 the wheel must contain no `site/` files. Keep those exact manifests synchronized with the Pages and
 packaging gates instead of replacing them with wildcards.
 

@@ -4,7 +4,7 @@ The static `MailboxProvider` contract exposes mailbox identity, provider-neutral
 enumeration, raw retrieval, the current checkpoint, checkpoint kind, and optional validation.
 Provider message references are opaque. Detection receives only `NormalizedMessage` values.
 
-Gmail is the only 0.1.2 adapter. It uses the installed-application OAuth flow and exact
+Gmail is the only 0.1.3 adapter. It uses the installed-application OAuth flow and exact
 `gmail.readonly` scope, bounded pagination, retryable API status handling, a 25 MiB decoded raw
 message limit, and Gmail history IDs. A 404 history response becomes a typed stale-checkpoint event.
 

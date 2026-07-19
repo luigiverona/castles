@@ -27,7 +27,7 @@ NOW = datetime(2026, 7, 14, tzinfo=UTC)
 
 def client(path: Path) -> Path:
     path.write_text(
-        '{"installed":{"client_id":"id","client_secret":"secret","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token"}}'
+        '{"installed":{"client_id":"synthetic-client.apps.googleusercontent.com","client_secret":"synthetic-secret","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","redirect_uris":["http://localhost"]}}'
     )
     return path
 
@@ -126,10 +126,18 @@ def test_setup_usecase_copies_private_client(
     credentials = cast(Credentials, SimpleNamespace())
     monkeypatch.setattr(wiring, "authorize", lambda *args, **kwargs: credentials)
     monkeypatch.setattr(wiring, "Gmail", lambda _: Provider())
-    mailbox = wiring.setup_usecase().execute(source, force=True, no_browser=True)
+    terminal = SimpleNamespace(
+        interactive=lambda: False,
+        write=lambda _: None,
+        confirm=lambda *args, **kwargs: None,
+        select=lambda *args, **kwargs: None,
+        path=lambda _: None,
+    )
+    mailbox = wiring.setup_usecase(terminal).execute(source, force=True, no_browser=True)
     assert mailbox.address == "person@example.com"
     assert isolated.client.is_file()
     assert "client_secret" not in isolated.client.name
+    assert not isolated.database.exists()
 
 
 def test_scan_and_local_results_through_composition(
@@ -143,11 +151,8 @@ def test_scan_and_local_results_through_composition(
     assert local[0].findings[0].entity == "unknown-saas.example"
 
 
-def test_empty_results_and_find_client(isolated: Paths, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_empty_results(isolated: Paths) -> None:
     assert wiring.local_results() == ()
-    expected = isolated.config / "source.json"
-    monkeypatch.setattr(wiring, "discover_client", lambda _: expected)
-    assert wiring.find_client() == expected
 
 
 def test_doctor_complete_and_provider_checks(
